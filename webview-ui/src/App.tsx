@@ -17,6 +17,7 @@ import { useEditorActions } from './hooks/useEditorActions.js';
 import { useEditorKeyboard } from './hooks/useEditorKeyboard.js';
 import { useExtensionMessages } from './hooks/useExtensionMessages.js';
 import { useIntroTour } from './hooks/useIntroTour.js';
+import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
 import { ToolOverlay } from './office/components/ToolOverlay.js';
 import { EditorState } from './office/editor/editorState.js';
@@ -528,6 +529,8 @@ function App() {
       />
 
       <ConnectionIndicator />
+
+      {isBrowserRuntime && <VirtualAccountPanel />}
 
       <ChangelogModal
         isOpen={isChangelogOpen}
