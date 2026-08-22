@@ -6,6 +6,7 @@ import type { PriceScenario } from '../src/miraiOffice/marketScenario.ts';
 import {
   advanceVirtualAccountDay,
   contributeAndPurchase,
+  countPurchases,
   createVirtualAccount,
   getVirtualAccountView,
 } from '../src/miraiOffice/virtualAccount.ts';
@@ -38,6 +39,7 @@ test('deposits 10,000 yen and buys one unit on the first day', () => {
   assert.equal(view.quantity, 1);
   assert.equal(view.valuation, 10_000);
   assert.equal(state.events.length, 2);
+  assert.equal(countPurchases(state), 1);
   assert.deepEqual(
     state.events.map((event) => event.type),
     ['deposit', 'purchase'],
@@ -68,6 +70,7 @@ test('allows another contribution at the current price', () => {
   assert.equal(view.quantity, 2);
   assert.equal(view.valuation, 19_000);
   assert.equal(view.profitLoss, -500);
+  assert.equal(countPurchases(added), 2);
 });
 
 test('refuses to advance beyond the final day', () => {

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { HooksConsentRequest } from '../../../core/src/messages.js';
-import { type OfficeActorSnapshot, parseOfficeActorSnapshot } from '../miraiOffice/demoOffice.js';
+import {
+  type OfficeActor,
+  type OfficeActorSnapshot,
+  parseOfficeActorSnapshot,
+} from '../miraiOffice/demoOffice.js';
 import { playDoneSound, playPermissionSound, setSoundEnabled } from '../notificationSound.js';
 import type { ExistingAgentMeta, PendingAgent } from '../office/engine/existingAgents.js';
 import { reconcileExistingAgents } from '../office/engine/existingAgents.js';
@@ -71,6 +75,7 @@ export interface WorkspaceFolder {
 
 interface ExtensionMessageState {
   agents: number[];
+  officeActors: OfficeActor[];
   selectedAgent: number | null;
   agentTools: Record<number, ToolActivity[]>;
   agentStatuses: Record<number, string>;
@@ -123,6 +128,7 @@ export function useExtensionMessages(
   isEditDirty?: () => boolean,
 ): ExtensionMessageState {
   const [agents, setAgents] = useState<number[]>([]);
+  const [officeActors, setOfficeActors] = useState<OfficeActor[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
   const [agentTools, setAgentTools] = useState<Record<number, ToolActivity[]>>({});
   const [agentStatuses, setAgentStatuses] = useState<Record<number, string>>({});
@@ -248,17 +254,9 @@ export function useExtensionMessages(
       } else if (msg.type === 'officeActorsLoaded') {
         const snapshot: OfficeActorSnapshot = parseOfficeActorSnapshot(msg.snapshot);
         const ids = snapshot.actors.map((actor) => actor.id);
+        setOfficeActors(snapshot.actors);
         setAgents(ids);
-        setSelectedAgent(ids[0] ?? null);
-        for (const actor of snapshot.actors) {
-          if (!os.characters.has(actor.id)) {
-            os.addAgent(actor.id, actor.palette, actor.hueShift);
-          }
-          const character = os.characters.get(actor.id);
-          if (character) character.agentName = actor.label;
-          os.setAgentActive(actor.id, actor.activity === 'working');
-        }
-        saveAgentSeats(os);
+        setSelectedAgent(null);
       } else if (msg.type === 'agentCreated') {
         const id = msg.id as number;
         const folderName = msg.folderName as string | undefined;
@@ -775,6 +773,7 @@ export function useExtensionMessages(
 
   return {
     agents,
+    officeActors,
     selectedAgent,
     agentTools,
     agentStatuses,

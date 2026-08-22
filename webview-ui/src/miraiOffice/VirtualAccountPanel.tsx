@@ -6,10 +6,16 @@ import { parsePriceScenarioCatalog, type PriceScenarioCatalog } from './marketSc
 import {
   advanceVirtualAccountDay,
   contributeAndPurchase,
+  countPurchases,
   createVirtualAccount,
   getVirtualAccountView,
   type VirtualAccountState,
 } from './virtualAccount.js';
+
+interface VirtualAccountPanelProps {
+  teamCapacity?: number;
+  onTeamSizeChange?: (teamSize: number) => void;
+}
 
 function formatYen(value: number): string {
   return `${new Intl.NumberFormat('ja-JP').format(value)}円`;
@@ -20,7 +26,10 @@ function formatSignedYen(value: number): string {
   return `${prefix}${formatYen(value)}`;
 }
 
-export function VirtualAccountPanel() {
+export function VirtualAccountPanel({
+  teamCapacity = 3,
+  onTeamSizeChange,
+}: VirtualAccountPanelProps) {
   const [catalog, setCatalog] = useState<PriceScenarioCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [screen, setScreen] = useState<'child' | 'guardian'>('child');
@@ -53,6 +62,12 @@ export function VirtualAccountPanel() {
     [account?.scenarioId, catalog],
   );
   const view = account && scenario ? getVirtualAccountView(account, scenario) : null;
+  const purchaseCount = account ? countPurchases(account) : 0;
+  const teamSize = Math.min(purchaseCount, teamCapacity);
+
+  useEffect(() => {
+    onTeamSizeChange?.(teamSize);
+  }, [onTeamSizeChange, teamSize]);
 
   const resetForScenario = (scenarioId: string) => {
     setAccount(createVirtualAccount(scenarioId));
@@ -83,7 +98,12 @@ export function VirtualAccountPanel() {
             <p className="m-0 text-xs text-text-muted">子ども画面</p>
             <h2 className="m-0 text-lg">みらい世界チーム</h2>
           </div>
-          <span className="text-sm text-text-muted">{view.day}日目 / 30日</span>
+          <div className="text-right text-sm text-text-muted">
+            <div>{view.day}日目 / 30日</div>
+            <div>
+              チーム {teamSize} / {teamCapacity}人
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-5">
@@ -109,6 +129,11 @@ export function VirtualAccountPanel() {
         {!view.hasInvestment && (
           <p className="m-0 text-sm leading-snug">
             おうちの人といっしょに、最初の積み立てを始めましょう。
+          </p>
+        )}
+        {teamSize >= teamCapacity && (
+          <p className="m-0 text-sm leading-snug">
+            {teamCapacity}人のチームがそろいました。これからの積み立ても、同じチームで続けます。
           </p>
         )}
         <Button size="md" onClick={() => setScreen('guardian')}>
@@ -160,6 +185,10 @@ export function VirtualAccountPanel() {
         <span className="text-right">{formatYen(view.profitLoss)}</span>
         <span className="text-text-muted">保有数量</span>
         <span className="text-right">{view.quantity.toFixed(4)}口</span>
+        <span className="text-text-muted">チーム</span>
+        <span className="text-right">
+          {teamSize} / {teamCapacity}人
+        </span>
       </div>
 
       <div className="flex flex-wrap gap-5">

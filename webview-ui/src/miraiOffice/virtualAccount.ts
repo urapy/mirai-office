@@ -49,6 +49,10 @@ export function createVirtualAccount(scenarioId: string): VirtualAccountState {
   };
 }
 
+export function countPurchases(state: VirtualAccountState): number {
+  return state.events.filter((event) => event.type === 'purchase').length;
+}
+
 /**
  * MVP convenience transaction: deposit an amount and immediately purchase the
  * single fictional fund at the current day's fixed price.

@@ -17,6 +17,7 @@ import { useEditorActions } from './hooks/useEditorActions.js';
 import { useEditorKeyboard } from './hooks/useEditorKeyboard.js';
 import { useExtensionMessages } from './hooks/useExtensionMessages.js';
 import { useIntroTour } from './hooks/useIntroTour.js';
+import { syncOfficeActors } from './miraiOffice/officeActorSync.js';
 import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
 import { ToolOverlay } from './office/components/ToolOverlay.js';
@@ -69,6 +70,7 @@ function App() {
 
   const {
     agents,
+    officeActors,
     selectedAgent,
     agentTools,
     agentStatuses,
@@ -98,6 +100,16 @@ function App() {
     showAreas,
     setShowAreas,
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
+
+  const [miraiTeamSize, setMiraiTeamSize] = useState(0);
+  const handleMiraiTeamSizeChange = useCallback((teamSize: number) => {
+    setMiraiTeamSize(teamSize);
+  }, []);
+
+  useEffect(() => {
+    if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
+    syncOfficeActors(getOfficeState(), officeActors, miraiTeamSize);
+  }, [layoutReady, miraiTeamSize, officeActors]);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
@@ -530,7 +542,12 @@ function App() {
 
       <ConnectionIndicator />
 
-      {isBrowserRuntime && <VirtualAccountPanel />}
+      {isBrowserRuntime && (
+        <VirtualAccountPanel
+          teamCapacity={officeActors.length || 3}
+          onTeamSizeChange={handleMiraiTeamSizeChange}
+        />
+      )}
 
       <ChangelogModal
         isOpen={isChangelogOpen}
