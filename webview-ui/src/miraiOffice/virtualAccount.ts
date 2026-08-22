@@ -1,8 +1,4 @@
-import {
-  calculateMarketWeather,
-  type MarketWeather,
-  type PriceScenario,
-} from './marketScenario.js';
+import type { PriceScenario } from './marketScenario.js';
 
 export type InvestmentEvent =
   | { type: 'deposit'; day: number; amount: number }
@@ -26,7 +22,6 @@ export interface VirtualAccountView {
   quantity: number;
   valuation: number;
   profitLoss: number;
-  weather: MarketWeather;
   hasInvestment: boolean;
 }
 
@@ -126,7 +121,6 @@ export function getVirtualAccountView(
     quantity: state.quantity,
     valuation,
     profitLoss: valuation - state.principal,
-    weather: calculateMarketWeather(scenario.prices, dayIndex),
     hasInvestment: state.principal > 0,
   };
 }

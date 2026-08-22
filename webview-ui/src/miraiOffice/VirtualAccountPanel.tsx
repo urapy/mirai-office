@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '../components/ui/Button.js';
+import { getChildExplanation } from './childExplanation.js';
 import { parsePriceScenarioCatalog, type PriceScenarioCatalog } from './marketScenario.js';
 import {
   advanceVirtualAccountDay,
@@ -10,14 +11,13 @@ import {
   type VirtualAccountState,
 } from './virtualAccount.js';
 
-const WEATHER_LABELS = {
-  sunny: '☀️ 晴れ',
-  cloudy: '☁️ くもり',
-  rainy: '🌧️ 雨',
-} as const;
-
 function formatYen(value: number): string {
   return `${new Intl.NumberFormat('ja-JP').format(value)}円`;
+}
+
+function formatSignedYen(value: number): string {
+  const prefix = value > 0 ? '+' : '';
+  return `${prefix}${formatYen(value)}`;
 }
 
 export function VirtualAccountPanel() {
@@ -75,20 +75,42 @@ export function VirtualAccountPanel() {
   }
 
   if (screen === 'child') {
+    const childExplanation = getChildExplanation(scenario, view.day);
     return (
-      <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-280 flex flex-col gap-10">
+      <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-320 flex flex-col gap-10">
         <div className="flex items-start justify-between gap-8">
           <div>
-            <p className="m-0 text-xs text-text-muted">みらい世界チーム</p>
-            <h2 className="m-0 text-lg">{WEATHER_LABELS[view.weather]}</h2>
+            <p className="m-0 text-xs text-text-muted">子ども画面</p>
+            <h2 className="m-0 text-lg">みらい世界チーム</h2>
           </div>
           <span className="text-sm text-text-muted">{view.day}日目 / 30日</span>
         </div>
-        <p className="m-0 text-sm leading-snug">
-          {view.hasInvestment
-            ? '天気が変わっても、チームは今日もいつもの仕事を続けています。'
-            : 'おうちの人といっしょに、最初の積み立てを始めましょう。'}
-        </p>
+
+        <div className="grid grid-cols-1 gap-5">
+          <div className="bg-bg-dark border-2 border-border p-8">
+            <p className="m-0 text-xs text-text-muted">投資したお金（元本）</p>
+            <p className="m-0 text-lg">{formatYen(view.principal)}</p>
+          </div>
+          <div className="bg-bg-dark border-2 border-border p-8">
+            <p className="m-0 text-xs text-text-muted">いまの価値（評価額）</p>
+            <p className="m-0 text-lg">{formatYen(view.valuation)}</p>
+          </div>
+          <div className="bg-bg-dark border-2 border-border p-8">
+            <p className="m-0 text-xs text-text-muted">増えた・減った金額（損益）</p>
+            <p className="m-0 text-lg">{formatSignedYen(view.profitLoss)}</p>
+          </div>
+        </div>
+
+        <div className="border-2 border-border p-8 flex flex-col gap-4">
+          <h3 className="m-0 text-base">{childExplanation.headline}</h3>
+          <p className="m-0 text-sm leading-snug">{childExplanation.explanation}</p>
+        </div>
+
+        {!view.hasInvestment && (
+          <p className="m-0 text-sm leading-snug">
+            おうちの人といっしょに、最初の積み立てを始めましょう。
+          </p>
+        )}
         <Button size="md" onClick={() => setScreen('guardian')}>
           保護者画面へ
         </Button>
@@ -123,12 +145,11 @@ export function VirtualAccountPanel() {
           ))}
         </select>
       </label>
+      <p className="m-0 text-xs text-text-muted leading-snug">{scenario.purpose}</p>
 
       <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm">
         <span className="text-text-muted">日付</span>
         <span className="text-right">{view.day}日目 / 30日</span>
-        <span className="text-text-muted">天気</span>
-        <span className="text-right">{WEATHER_LABELS[view.weather]}</span>
         <span className="text-text-muted">現在価格</span>
         <span className="text-right">{formatYen(view.price)}</span>
         <span className="text-text-muted">元本</span>

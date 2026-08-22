@@ -16,6 +16,7 @@ const scenario: PriceScenario = {
   purpose: '状態遷移の確認',
   initialPrice: 10_000,
   prices: [10_000, 9_500, 10_500],
+  stories: [],
 };
 
 test('starts with no investment and no profit or loss', () => {
