@@ -58,6 +58,7 @@ function indexedPath(kind: 'characters' | 'floors' | 'walls', relPath: string): 
 
 async function verifyAssetUrls(baseUrl: string, basePath: string): Promise<void> {
   await assertUrlOk(`${baseUrl}${basePath}mirai-office/demo-office.json`);
+  await assertUrlOk(`${baseUrl}${basePath}mirai-office/price-scenarios.json`);
 
   const assetIndex = await fetchJson<AssetIndex>(assetUrl(baseUrl, basePath, 'asset-index.json'));
   const catalog = await fetchJson<CatalogEntry[]>(
