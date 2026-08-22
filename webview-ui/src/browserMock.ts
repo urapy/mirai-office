@@ -25,6 +25,7 @@ import type {
   CatalogEntry,
   CharacterDirectionSprites,
 } from '../../core/src/assets/types.ts';
+import { type OfficeActorSnapshot, parseOfficeActorSnapshot } from './miraiOffice/demoOffice.ts';
 
 interface MockPayload {
   characters: CharacterDirectionSprites[];
@@ -34,6 +35,7 @@ interface MockPayload {
   furnitureCatalog: CatalogEntry[];
   furnitureSprites: Record<string, string[][]>;
   layout: unknown;
+  officeActors: OfficeActorSnapshot;
 }
 
 // ── Module-level state ─────────────────────────────────────────────────────────
@@ -184,10 +186,12 @@ export async function initBrowserMock(): Promise<void> {
 
   const base = import.meta.env.BASE_URL; // '/' in dev, '/sub/' with a subpath, './' in production
 
-  const [assetIndex, catalog] = await Promise.all([
+  const [assetIndex, catalog, officeActorsRaw] = await Promise.all([
     fetch(`${base}assets/asset-index.json`).then((r) => r.json()) as Promise<AssetIndex>,
     fetch(`${base}assets/furniture-catalog.json`).then((r) => r.json()) as Promise<CatalogEntry[]>,
+    fetch(`${base}mirai-office/demo-office.json`).then((r) => r.json()) as Promise<unknown>,
   ]);
+  const officeActors = parseOfficeActorSnapshot(officeActorsRaw);
 
   const shouldTryDecoded = import.meta.env.DEV;
   const [decodedCharacters, decodedFloors, decodedWalls, decodedFurniture] = shouldTryDecoded
@@ -237,6 +241,7 @@ export async function initBrowserMock(): Promise<void> {
     furnitureCatalog: catalog,
     furnitureSprites,
     layout,
+    officeActors,
   };
 
   console.log(
@@ -262,6 +267,7 @@ export function dispatchMockMessages(): void {
     furnitureCatalog,
     furnitureSprites,
     layout,
+    officeActors,
   } = mockPayload;
 
   function dispatch(data: unknown): void {
@@ -277,11 +283,13 @@ export function dispatchMockMessages(): void {
   dispatch({ type: 'carpetTilesLoaded', sets: carpetSets });
   dispatch({ type: 'furnitureAssetsLoaded', catalog: furnitureCatalog, sprites: furnitureSprites });
   dispatch({ type: 'layoutLoaded', layout });
+  dispatch({ type: 'officeActorsLoaded', snapshot: officeActors });
   dispatch({
     type: 'settingsLoaded',
     soundEnabled: false,
     extensionVersion: '1.3.0',
     lastSeenVersion: '1.2',
+    alwaysShowLabels: true,
   });
 
   console.log('[BrowserMock] Messages dispatched');

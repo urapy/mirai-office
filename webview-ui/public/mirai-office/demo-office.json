@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "actors": [
+    {
+      "id": 1001,
+      "label": "せかい係",
+      "palette": 0,
+      "activity": "working"
+    },
+    {
+      "id": 1002,
+      "label": "くらし係",
+      "palette": 2,
+      "activity": "working"
+    },
+    {
+      "id": 1003,
+      "label": "みらい係",
+      "palette": 4,
+      "activity": "working"
+    }
+  ]
+}

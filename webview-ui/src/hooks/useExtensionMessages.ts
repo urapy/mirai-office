@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { HooksConsentRequest } from '../../../core/src/messages.js';
+import { type OfficeActorSnapshot, parseOfficeActorSnapshot } from '../miraiOffice/demoOffice.js';
 import { playDoneSound, playPermissionSound, setSoundEnabled } from '../notificationSound.js';
 import type { ExistingAgentMeta, PendingAgent } from '../office/engine/existingAgents.js';
 import { reconcileExistingAgents } from '../office/engine/existingAgents.js';
@@ -244,6 +245,20 @@ export function useExtensionMessages(
         if (os.characters.size > 0) {
           saveAgentSeats(os);
         }
+      } else if (msg.type === 'officeActorsLoaded') {
+        const snapshot: OfficeActorSnapshot = parseOfficeActorSnapshot(msg.snapshot);
+        const ids = snapshot.actors.map((actor) => actor.id);
+        setAgents(ids);
+        setSelectedAgent(ids[0] ?? null);
+        for (const actor of snapshot.actors) {
+          if (!os.characters.has(actor.id)) {
+            os.addAgent(actor.id, actor.palette, actor.hueShift);
+          }
+          const character = os.characters.get(actor.id);
+          if (character) character.agentName = actor.label;
+          os.setAgentActive(actor.id, actor.activity === 'working');
+        }
+        saveAgentSeats(os);
       } else if (msg.type === 'agentCreated') {
         const id = msg.id as number;
         const folderName = msg.folderName as string | undefined;
