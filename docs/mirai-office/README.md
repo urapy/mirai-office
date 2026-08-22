@@ -12,6 +12,7 @@ MVP要件は2026-08-22に確定しました。現在はPixel Agents未変更版�
 - [Pixel Agents調査](pixel-agents-research.md)
 - [こどもNISA制度メモ](child-nisa-research.md)
 - [MVP開発ロードマップ](mvp-roadmap.md)
+- [Pixel Agentsベースライン検証](baseline.md)
 
 ## 現在地
 

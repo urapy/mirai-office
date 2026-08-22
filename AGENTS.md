@@ -37,3 +37,4 @@
 - `docs/mirai-office/pixel-agents-research.md`: Pixel Agentsの採用方針と調査事項
 - `docs/mirai-office/child-nisa-research.md`: 対象年齢と制度上の前提
 - `docs/mirai-office/mvp-roadmap.md`: フォーク調査から画面・技術設計までの進行手順
+- `docs/mirai-office/baseline.md`: 上流未変更版のビルド・テスト・起動確認結果
