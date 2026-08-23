@@ -54,10 +54,6 @@ export const BUTTON_LINE_WIDTH_ZOOM_FACTOR = 0.5;
 export const BUBBLE_FADE_DURATION_SEC = 0.5;
 export const BUBBLE_SITTING_OFFSET_PX = 10;
 export const BUBBLE_VERTICAL_OFFSET_PX = 24;
-export const STORY_CUE_BUBBLE_BG = '#f5f5f5';
-export const STORY_CUE_BUBBLE_BORDER = '#303040';
-export const STORY_CUE_MUSIC_COLOR = '#7a4bc2';
-export const STORY_CUE_SWEAT_COLOR = '#268bd2';
 export const FALLBACK_FLOOR_COLOR = '#808080';
 
 // ── Rendering - Overlay Colors (canvas, not CSS) ─────────────

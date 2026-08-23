@@ -41,10 +41,6 @@ import {
   SELECTED_OUTLINE_ALPHA,
   SELECTION_DASH_PATTERN,
   SELECTION_HIGHLIGHT_COLOR,
-  STORY_CUE_BUBBLE_BG,
-  STORY_CUE_BUBBLE_BORDER,
-  STORY_CUE_MUSIC_COLOR,
-  STORY_CUE_SWEAT_COLOR,
   VOID_TILE_DASH_PATTERN,
   VOID_TILE_OUTLINE_COLOR,
 } from '../../constants.js';
@@ -791,23 +787,18 @@ function renderBubbles(
 
     const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
     if (ch.bubbleType === 'music' || ch.bubbleType === 'sweat') {
-      const size = Math.round(12 * zoom);
-      const bubbleX = Math.round(offsetX + ch.x * zoom - size / 2);
+      const symbol = ch.bubbleType === 'music' ? '🎶' : '💦';
+      const fontSize = Math.max(10, Math.round(10 * zoom));
+      const bubbleX = Math.round(offsetX + ch.x * zoom);
       const bubbleY = Math.round(
-        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - size - 1 * zoom,
+        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - fontSize / 2,
       );
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = STORY_CUE_BUBBLE_BG;
-      ctx.fillRect(bubbleX, bubbleY, size, size);
-      ctx.strokeStyle = STORY_CUE_BUBBLE_BORDER;
-      ctx.lineWidth = Math.max(1, Math.round(zoom));
-      ctx.strokeRect(bubbleX, bubbleY, size, size);
-      ctx.fillStyle = ch.bubbleType === 'music' ? STORY_CUE_MUSIC_COLOR : STORY_CUE_SWEAT_COLOR;
-      ctx.font = `bold ${Math.max(8, Math.round(8 * zoom))}px monospace`;
+      ctx.font = `${fontSize}px "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(ch.bubbleType === 'music' ? '♪' : '汗', bubbleX + size / 2, bubbleY + size / 2);
+      ctx.fillText(symbol, bubbleX, bubbleY);
       ctx.restore();
       continue;
     }

@@ -34,6 +34,7 @@ export function VirtualAccountPanel({
   const [catalog, setCatalog] = useState<PriceScenarioCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [screen, setScreen] = useState<'child' | 'guardian'>('child');
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [account, setAccount] = useState<VirtualAccountState | null>(null);
   const [selectedProductId, setSelectedProductId] = useState(FICTIONAL_PRODUCTS[0].id);
   const [contributionAmount, setContributionAmount] = useState(10_000);
@@ -110,6 +111,19 @@ export function VirtualAccountPanel({
     );
   }
 
+  if (!isPanelOpen) {
+    return (
+      <Button
+        size="sm"
+        className="absolute top-8 right-8 z-30 shadow-pixel"
+        aria-expanded="false"
+        onClick={() => setIsPanelOpen(true)}
+      >
+        口座パネルを表示
+      </Button>
+    );
+  }
+
   if (screen === 'child') {
     const childExplanation = getChildExplanation(scenario, view.day);
     return (
@@ -119,11 +133,19 @@ export function VirtualAccountPanel({
             <p className="m-0 text-xs text-text-muted">子ども画面</p>
             <h2 className="m-0 text-lg">わたしの投資チーム</h2>
           </div>
-          <div className="text-right text-sm text-text-muted">
+          <div className="flex flex-col items-end gap-3 text-right text-sm text-text-muted">
             <div>{view.day}日目 / 30日</div>
             <div>
               商品 {purchasedProducts.length} / {FICTIONAL_PRODUCTS.length}こ
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded="true"
+              onClick={() => setIsPanelOpen(false)}
+            >
+              閉じる
+            </Button>
           </div>
         </div>
 
@@ -186,9 +208,19 @@ export function VirtualAccountPanel({
           <p className="m-0 text-xs text-text-muted">保護者用・仮想口座</p>
           <h2 className="m-0 text-lg">商品の選択と積み立て</h2>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setScreen('child')}>
-          子ども画面へ
-        </Button>
+        <div className="flex flex-col items-end gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setScreen('child')}>
+            子ども画面へ
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-expanded="true"
+            onClick={() => setIsPanelOpen(false)}
+          >
+            閉じる
+          </Button>
+        </div>
       </div>
 
       <fieldset className="m-0 p-0 border-0 flex flex-col gap-5">

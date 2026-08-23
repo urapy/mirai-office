@@ -40,7 +40,10 @@ export function syncOfficeActors(
     }
 
     const character = officeState.characters.get(actor.id);
-    if (character) character.agentName = actor.label;
+    if (character) {
+      character.agentName = actor.label;
+      character.interactionOnlyLabel = true;
+    }
     officeState.setAgentActive(actor.id, actor.activity === 'working');
   }
 }

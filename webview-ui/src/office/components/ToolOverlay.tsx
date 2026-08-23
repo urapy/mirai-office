@@ -130,8 +130,11 @@ export function ToolOverlay({
         const isHovered = hoveredId === id;
         const isSub = ch.isSubagent;
 
-        // Only show for hovered or selected agents (unless always-show is on)
-        if (!alwaysShowOverlay && !isSelected && !isHovered) return null;
+        // Mirai product labels stay interaction-only even when the global
+        // always-show setting is enabled, keeping the office view uncluttered.
+        if ((!alwaysShowOverlay || ch.interactionOnlyLabel) && !isSelected && !isHovered) {
+          return null;
+        }
 
         // Position above character
         const sittingOffset = ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0;

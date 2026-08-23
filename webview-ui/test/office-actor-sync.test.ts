@@ -40,6 +40,7 @@ test('adds, removes, and revives only the unlocked Mirai Office actors', () => {
   syncOfficeActors(officeState, actors, [1]);
   assert.equal(officeState.characters.size, 1);
   assert.equal(officeState.characters.get(1)?.agentName, 'せかい成長ファンド');
+  assert.equal(officeState.characters.get(1)?.interactionOnlyLabel, true);
   const arriving = officeState.characters.get(1)!;
   const assignedSeat = officeState.seats.get(arriving.seatId!)!;
   assert.notDeepEqual(
