@@ -15,6 +15,7 @@ import {
 
 interface VirtualAccountPanelProps {
   onVisibleActorIdsChange?: (actorIds: number[]) => void;
+  onStoryCue?: (cue: 'music' | 'sweat', day: number) => void;
 }
 
 function formatYen(value: number): string {
@@ -26,7 +27,10 @@ function formatSignedYen(value: number): string {
   return `${prefix}${formatYen(value)}`;
 }
 
-export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountPanelProps) {
+export function VirtualAccountPanel({
+  onVisibleActorIdsChange,
+  onStoryCue,
+}: VirtualAccountPanelProps) {
   const [catalog, setCatalog] = useState<PriceScenarioCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [screen, setScreen] = useState<'child' | 'guardian'>('child');
@@ -80,6 +84,14 @@ export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountP
 
   const resetForScenario = (scenarioId: string) => {
     setAccount(createVirtualAccount(scenarioId));
+  };
+
+  const advanceDay = () => {
+    const nextAccount = advanceVirtualAccountDay(account!, scenario!);
+    setAccount(nextAccount);
+    const story = scenario!.stories.find((candidate) => candidate.day === nextAccount.day);
+    if (story?.tone === 'positive') onStoryCue?.('music', nextAccount.day);
+    if (story?.tone === 'challenge') onStoryCue?.('sweat', nextAccount.day);
   };
 
   if (loadError) {
@@ -274,7 +286,7 @@ export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountP
         <Button
           size="md"
           disabled={!view.hasInvestment || isFinalDay}
-          onClick={() => setAccount(advanceVirtualAccountDay(account, scenario))}
+          onClick={advanceDay}
           className="disabled:cursor-default disabled:opacity-(--btn-disabled-opacity)"
         >
           1日進める

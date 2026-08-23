@@ -14,6 +14,7 @@ import {
   MAX_PET_ID_LENGTH,
   PET_HIT_HALF_WIDTH,
   PET_HIT_HEIGHT,
+  STORY_CUE_BUBBLE_DURATION_SEC,
   WAITING_BUBBLE_DURATION_SEC,
 } from '../../constants.js';
 import { getAnimationFrames, getCatalogEntry, getOnStateType } from '../layout/furnitureCatalog.js';
@@ -494,6 +495,61 @@ export class OfficeState {
     this.characters.set(id, ch);
   }
 
+  /** Move a newly-created Mirai Office character to the entrance and send it to its seat. */
+  enterAgentFromEntrance(id: number): boolean {
+    const ch = this.characters.get(id);
+    if (!ch || !ch.seatId) return false;
+    const seat = this.seats.get(ch.seatId);
+    if (!seat) return false;
+
+    const entrance = this.closestFreeWalkableTile(1, this.layout.rows - 2);
+    if (!entrance) return false;
+    const path = this.withOwnSeatUnblocked(ch, () =>
+      findPath(
+        entrance.col,
+        entrance.row,
+        seat.seatCol,
+        seat.seatRow,
+        this.tileMap,
+        this.blockedTiles,
+      ),
+    );
+    if (path.length === 0) return false;
+
+    ch.x = entrance.col * TILE_SIZE + TILE_SIZE / 2;
+    ch.y = entrance.row * TILE_SIZE + TILE_SIZE / 2;
+    ch.tileCol = entrance.col;
+    ch.tileRow = entrance.row;
+    ch.path = path;
+    ch.moveProgress = 0;
+    ch.state = CharacterState.WALK;
+    ch.frame = 0;
+    ch.frameTimer = 0;
+    return true;
+  }
+
+  /** Start one short, product-specific everyday-office excursion. */
+  startRoutineExcursion(id: number, target?: { col: number; row: number }): boolean {
+    const ch = this.characters.get(id);
+    if (!ch || ch.matrixEffect || ch.state !== CharacterState.TYPE) return false;
+
+    const candidates = this.walkableTiles.filter(
+      (tile) => Math.abs(tile.col - ch.tileCol) + Math.abs(tile.row - ch.tileRow) >= 3,
+    );
+    const destination = target ?? candidates[Math.floor(Math.random() * candidates.length)];
+    if (
+      !destination ||
+      !isWalkable(destination.col, destination.row, this.tileMap, this.blockedTiles)
+    ) {
+      return false;
+    }
+
+    this.setAgentActive(id, false);
+    if (this.walkToTile(id, destination.col, destination.row)) return true;
+    this.setAgentActive(id, true);
+    return false;
+  }
+
   // ── Greeter ───────────────────────────────────────────────────
   // The Intro is diegetic: a char_0 character stands near the office's
   // bottom-left corner and "speaks" the tour through a DOM bubble
@@ -903,6 +959,14 @@ export class OfficeState {
     }
   }
 
+  showStoryCueBubble(id: number, cue: 'music' | 'sweat'): void {
+    const ch = this.characters.get(id);
+    if (ch) {
+      ch.bubbleType = cue;
+      ch.bubbleTimer = STORY_CUE_BUBBLE_DURATION_SEC;
+    }
+  }
+
   /** Dismiss bubble on click — permission: instant, waiting: quick fade */
   dismissBubble(id: number): void {
     const ch = this.characters.get(id);
@@ -910,7 +974,7 @@ export class OfficeState {
     if (ch.bubbleType === 'permission') {
       ch.bubbleType = null;
       ch.bubbleTimer = 0;
-    } else if (ch.bubbleType === 'waiting') {
+    } else {
       // Trigger immediate fade (0.3s remaining)
       ch.bubbleTimer = Math.min(ch.bubbleTimer, DISMISS_BUBBLE_FAST_FADE_SEC);
     }
@@ -1114,8 +1178,8 @@ export class OfficeState {
         updateCharacter(ch, dt, this.walkableTiles, this.seats, this.tileMap, this.blockedTiles),
       );
 
-      // Tick bubble timer for waiting bubbles
-      if (ch.bubbleType === 'waiting') {
+      // Tick temporary bubble timers. Permission bubbles remain until resolved.
+      if (ch.bubbleType && ch.bubbleType !== 'permission') {
         ch.bubbleTimer -= dt;
         if (ch.bubbleTimer <= 0) {
           ch.bubbleType = null;

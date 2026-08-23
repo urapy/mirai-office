@@ -25,6 +25,9 @@ test('loads three reproducible 30-day scenarios', async () => {
     assert.equal(scenario.initialPrice, 10_000);
     assert.equal(scenario.prices.length, 30);
     assert.ok(scenario.stories.length > 0);
+    assert.ok(
+      scenario.stories.every((story) => ['positive', 'challenge', 'neutral'].includes(story.tone)),
+    );
   }
 });
 

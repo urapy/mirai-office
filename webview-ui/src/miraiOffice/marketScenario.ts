@@ -2,6 +2,7 @@ export interface ScenarioStory {
   day: number;
   headline: string;
   explanation: string;
+  tone: 'positive' | 'challenge' | 'neutral';
 }
 
 export interface PriceScenario {
@@ -69,7 +70,7 @@ export function parsePriceScenarioCatalog(value: unknown): PriceScenarioCatalog 
     const storyDays = new Set<number>();
     const parsedStories: ScenarioStory[] = (stories ?? []).map((story) => {
       if (!isRecord(story)) throw new Error('Invalid scenario story');
-      const { day, headline, explanation } = story;
+      const { day, headline, explanation, tone } = story;
       if (!Number.isInteger(day) || (day as number) < 1 || (day as number) > prices.length) {
         throw new Error('Scenario story days must be inside the price scenario');
       }
@@ -82,11 +83,15 @@ export function parsePriceScenarioCatalog(value: unknown): PriceScenarioCatalog 
       if (typeof explanation !== 'string' || explanation.trim().length === 0) {
         throw new Error('Scenario story explanations must not be empty');
       }
+      if (tone !== 'positive' && tone !== 'challenge' && tone !== 'neutral') {
+        throw new Error('Scenario story tones must be positive, challenge, or neutral');
+      }
       storyDays.add(day as number);
       return {
         day: day as number,
         headline: headline.trim(),
         explanation: explanation.trim(),
+        tone,
       };
     });
 

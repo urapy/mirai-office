@@ -105,11 +105,52 @@ function App() {
   const handleMiraiVisibleActorIdsChange = useCallback((actorIds: number[]) => {
     setMiraiVisibleActorIds(actorIds);
   }, []);
+  const handleMiraiStoryCue = useCallback(
+    (cue: 'music' | 'sweat', day: number) => {
+      if (miraiVisibleActorIds.length === 0) return;
+      const actorId = miraiVisibleActorIds[(day - 1) % miraiVisibleActorIds.length];
+      getOfficeState().showStoryCueBubble(actorId, cue);
+    },
+    [miraiVisibleActorIds],
+  );
 
   useEffect(() => {
     if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
     syncOfficeActors(getOfficeState(), officeActors, miraiVisibleActorIds);
   }, [layoutReady, miraiVisibleActorIds, officeActors]);
+
+  useEffect(() => {
+    if (!isBrowserRuntime || !layoutReady || miraiVisibleActorIds.length === 0) return;
+    const officeState = getOfficeState();
+    const returnTimers = new Set<number>();
+    let nextActorIndex = 0;
+    let routineTimer = 0;
+
+    const scheduleRoutine = () => {
+      routineTimer = window.setTimeout(
+        () => {
+          const actorId = miraiVisibleActorIds[nextActorIndex % miraiVisibleActorIds.length];
+          nextActorIndex++;
+          if (officeState.startRoutineExcursion(actorId)) {
+            const returnTimer = window.setTimeout(() => {
+              returnTimers.delete(returnTimer);
+              officeState.setAgentActive(actorId, true);
+            }, 4_000);
+            returnTimers.add(returnTimer);
+          }
+          scheduleRoutine();
+        },
+        6_000 + Math.random() * 6_000,
+      );
+    };
+
+    scheduleRoutine();
+    return () => {
+      window.clearTimeout(routineTimer);
+      for (const timer of returnTimers) window.clearTimeout(timer);
+      for (const actorId of miraiVisibleActorIds) officeState.setAgentActive(actorId, true);
+    };
+  }, [layoutReady, miraiVisibleActorIds]);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
@@ -543,7 +584,10 @@ function App() {
       <ConnectionIndicator />
 
       {isBrowserRuntime && (
-        <VirtualAccountPanel onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange} />
+        <VirtualAccountPanel
+          onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange}
+          onStoryCue={handleMiraiStoryCue}
+        />
       )}
 
       <ChangelogModal

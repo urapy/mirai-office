@@ -30,6 +30,7 @@ export function syncOfficeActors(
 
     if (!existing) {
       officeState.addAgent(actor.id, actor.palette, actor.hueShift);
+      officeState.enterAgentFromEntrance(actor.id);
     } else if (existing.matrixEffect === 'despawn') {
       if (existing.seatId) {
         const seat = officeState.seats.get(existing.seatId);

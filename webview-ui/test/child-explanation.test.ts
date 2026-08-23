@@ -14,6 +14,7 @@ const scenario: PriceScenario = {
   stories: [
     {
       day: 3,
+      tone: 'challenge',
       headline: '材料費への心配が増えました',
       explanation: '商品を作る費用が増えています。',
     },

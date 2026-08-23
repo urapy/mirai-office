@@ -41,6 +41,10 @@ import {
   SELECTED_OUTLINE_ALPHA,
   SELECTION_DASH_PATTERN,
   SELECTION_HIGHLIGHT_COLOR,
+  STORY_CUE_BUBBLE_BG,
+  STORY_CUE_BUBBLE_BORDER,
+  STORY_CUE_MUSIC_COLOR,
+  STORY_CUE_SWEAT_COLOR,
   VOID_TILE_DASH_PATTERN,
   VOID_TILE_OUTLINE_COLOR,
 } from '../../constants.js';
@@ -779,20 +783,42 @@ function renderBubbles(
     // bubble, so skip the bubble for it.
     if (ch.bubbleType === 'waiting' && ch.waitingAwaitingInput) continue;
 
-    const sprite =
-      ch.bubbleType === 'permission' ? BUBBLE_PERMISSION_SPRITE : BUBBLE_WAITING_SPRITE;
-
-    // Compute opacity: permission = full, waiting = fade in last 0.5s
+    // Compute opacity: permission = full, temporary bubbles fade near the end.
     let alpha = 1.0;
-    if (ch.bubbleType === 'waiting' && ch.bubbleTimer < BUBBLE_FADE_DURATION_SEC) {
+    if (ch.bubbleType !== 'permission' && ch.bubbleTimer < BUBBLE_FADE_DURATION_SEC) {
       alpha = ch.bubbleTimer / BUBBLE_FADE_DURATION_SEC;
     }
+
+    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
+    if (ch.bubbleType === 'music' || ch.bubbleType === 'sweat') {
+      const size = Math.round(12 * zoom);
+      const bubbleX = Math.round(offsetX + ch.x * zoom - size / 2);
+      const bubbleY = Math.round(
+        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - size - 1 * zoom,
+      );
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = STORY_CUE_BUBBLE_BG;
+      ctx.fillRect(bubbleX, bubbleY, size, size);
+      ctx.strokeStyle = STORY_CUE_BUBBLE_BORDER;
+      ctx.lineWidth = Math.max(1, Math.round(zoom));
+      ctx.strokeRect(bubbleX, bubbleY, size, size);
+      ctx.fillStyle = ch.bubbleType === 'music' ? STORY_CUE_MUSIC_COLOR : STORY_CUE_SWEAT_COLOR;
+      ctx.font = `bold ${Math.max(8, Math.round(8 * zoom))}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch.bubbleType === 'music' ? '♪' : '汗', bubbleX + size / 2, bubbleY + size / 2);
+      ctx.restore();
+      continue;
+    }
+
+    const sprite =
+      ch.bubbleType === 'permission' ? BUBBLE_PERMISSION_SPRITE : BUBBLE_WAITING_SPRITE;
 
     const cached = getCachedSprite(sprite, zoom);
     // Position: centered above the character's head
     // Character is anchored bottom-center at (ch.x, ch.y), sprite is 16x24
     // Place bubble above head with a small gap; follow sitting offset
-    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
     const bubbleX = Math.round(offsetX + ch.x * zoom - cached.width / 2);
     const bubbleY = Math.round(
       offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom,
