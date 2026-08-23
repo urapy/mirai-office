@@ -8,6 +8,7 @@ import {
   contributeAndPurchase,
   countPurchases,
   createVirtualAccount,
+  getPurchasedProductIds,
   getVirtualAccountView,
 } from '../src/miraiOffice/virtualAccount.ts';
 
@@ -40,10 +41,27 @@ test('deposits 10,000 yen and buys one unit on the first day', () => {
   assert.equal(view.valuation, 10_000);
   assert.equal(state.events.length, 2);
   assert.equal(countPurchases(state), 1);
+  assert.deepEqual(getPurchasedProductIds(state), ['world-growth']);
   assert.deepEqual(
     state.events.map((event) => event.type),
     ['deposit', 'purchase'],
   );
+});
+
+test('tracks each selected fictional product independently', () => {
+  const first = contributeAndPurchase(
+    createVirtualAccount(scenario.id),
+    scenario,
+    10_000,
+    'daily-life',
+  );
+  const second = contributeAndPurchase(first, scenario, 5_000, 'future-tech');
+  const repeated = contributeAndPurchase(second, scenario, 1_000, 'daily-life');
+
+  assert.deepEqual(getPurchasedProductIds(repeated), ['daily-life', 'future-tech']);
+  assert.equal(repeated.holdings['daily-life'], 1.1);
+  assert.equal(repeated.holdings['future-tech'], 0.5);
+  assert.equal(getVirtualAccountView(repeated, scenario).principal, 16_000);
 });
 
 test('advances through fixed prices without changing the holding quantity', () => {

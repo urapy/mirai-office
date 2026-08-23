@@ -3,18 +3,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../components/ui/Button.js';
 import { getChildExplanation } from './childExplanation.js';
 import { parsePriceScenarioCatalog, type PriceScenarioCatalog } from './marketScenario.js';
+import { FICTIONAL_PRODUCTS } from './productCatalog.js';
 import {
   advanceVirtualAccountDay,
   contributeAndPurchase,
-  countPurchases,
   createVirtualAccount,
+  getPurchasedProductIds,
   getVirtualAccountView,
   type VirtualAccountState,
 } from './virtualAccount.js';
 
 interface VirtualAccountPanelProps {
-  teamCapacity?: number;
-  onTeamSizeChange?: (teamSize: number) => void;
+  onVisibleActorIdsChange?: (actorIds: number[]) => void;
 }
 
 function formatYen(value: number): string {
@@ -26,14 +26,13 @@ function formatSignedYen(value: number): string {
   return `${prefix}${formatYen(value)}`;
 }
 
-export function VirtualAccountPanel({
-  teamCapacity = 3,
-  onTeamSizeChange,
-}: VirtualAccountPanelProps) {
+export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountPanelProps) {
   const [catalog, setCatalog] = useState<PriceScenarioCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [screen, setScreen] = useState<'child' | 'guardian'>('child');
   const [account, setAccount] = useState<VirtualAccountState | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState(FICTIONAL_PRODUCTS[0].id);
+  const [contributionAmount, setContributionAmount] = useState(10_000);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,12 +61,22 @@ export function VirtualAccountPanel({
     [account?.scenarioId, catalog],
   );
   const view = account && scenario ? getVirtualAccountView(account, scenario) : null;
-  const purchaseCount = account ? countPurchases(account) : 0;
-  const teamSize = Math.min(purchaseCount, teamCapacity);
+  const purchasedProductIds = useMemo(
+    () => (account ? getPurchasedProductIds(account) : []),
+    [account],
+  );
+  const purchasedProducts = useMemo(
+    () => FICTIONAL_PRODUCTS.filter((product) => purchasedProductIds.includes(product.id)),
+    [purchasedProductIds],
+  );
+  const visibleActorIds = useMemo(
+    () => purchasedProducts.map((product) => product.actorId),
+    [purchasedProducts],
+  );
 
   useEffect(() => {
-    onTeamSizeChange?.(teamSize);
-  }, [onTeamSizeChange, teamSize]);
+    onVisibleActorIdsChange?.(visibleActorIds);
+  }, [onVisibleActorIdsChange, visibleActorIds]);
 
   const resetForScenario = (scenarioId: string) => {
     setAccount(createVirtualAccount(scenarioId));
@@ -92,16 +101,16 @@ export function VirtualAccountPanel({
   if (screen === 'child') {
     const childExplanation = getChildExplanation(scenario, view.day);
     return (
-      <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-320 flex flex-col gap-10">
+      <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-320 max-h-[calc(100vh-16px)] overflow-y-auto flex flex-col gap-10">
         <div className="flex items-start justify-between gap-8">
           <div>
             <p className="m-0 text-xs text-text-muted">子ども画面</p>
-            <h2 className="m-0 text-lg">みらい世界チーム</h2>
+            <h2 className="m-0 text-lg">わたしの投資チーム</h2>
           </div>
           <div className="text-right text-sm text-text-muted">
             <div>{view.day}日目 / 30日</div>
             <div>
-              チーム {teamSize} / {teamCapacity}人
+              商品 {purchasedProducts.length} / {FICTIONAL_PRODUCTS.length}こ
             </div>
           </div>
         </div>
@@ -126,14 +135,28 @@ export function VirtualAccountPanel({
           <p className="m-0 text-sm leading-snug">{childExplanation.explanation}</p>
         </div>
 
+        {purchasedProducts.length > 0 && (
+          <div className="flex flex-col gap-4">
+            <p className="m-0 text-xs text-text-muted">積み立てている商品</p>
+            {purchasedProducts.map((product) => (
+              <div key={product.id} className="bg-bg-dark border-2 border-border p-6">
+                <p className="m-0 text-sm">{product.name}</p>
+                <p className="m-0 mt-2 text-xs text-text-muted leading-snug">
+                  {product.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {!view.hasInvestment && (
           <p className="m-0 text-sm leading-snug">
             おうちの人といっしょに、最初の積み立てを始めましょう。
           </p>
         )}
-        {teamSize >= teamCapacity && (
+        {purchasedProducts.length >= FICTIONAL_PRODUCTS.length && (
           <p className="m-0 text-sm leading-snug">
-            {teamCapacity}人のチームがそろいました。これからの積み立ても、同じチームで続けます。
+            3つの商品がそろいました。これからも選んだ商品へ積み立てを続けられます。
           </p>
         )}
         <Button size="md" onClick={() => setScreen('guardian')}>
@@ -145,19 +168,64 @@ export function VirtualAccountPanel({
 
   const isFinalDay = view.day >= scenario.prices.length;
   return (
-    <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-320 flex flex-col gap-10">
+    <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-320 max-h-[calc(100vh-16px)] overflow-y-auto flex flex-col gap-10">
       <div className="flex items-start justify-between gap-8">
         <div>
           <p className="m-0 text-xs text-text-muted">保護者用・仮想口座</p>
-          <h2 className="m-0 text-lg">みらい世界チーム</h2>
+          <h2 className="m-0 text-lg">商品の選択と積み立て</h2>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setScreen('child')}>
           子ども画面へ
         </Button>
       </div>
 
+      <fieldset className="m-0 p-0 border-0 flex flex-col gap-5">
+        <legend className="mb-3 text-xs text-text-muted">積み立てる架空の商品</legend>
+        {FICTIONAL_PRODUCTS.map((product) => {
+          const isSelected = product.id === selectedProductId;
+          const isOwned = purchasedProductIds.includes(product.id);
+          return (
+            <label
+              key={product.id}
+              className={`border-2 p-7 cursor-pointer ${
+                isSelected ? 'border-accent bg-bg-dark' : 'border-border'
+              }`}
+            >
+              <input
+                type="radio"
+                name="fictional-product"
+                value={product.id}
+                checked={isSelected}
+                onChange={() => setSelectedProductId(product.id)}
+                className="mr-5"
+              />
+              <span className="text-sm">{product.name}</span>
+              {isOwned && <span className="ml-4 text-xs text-text-muted">積立中</span>}
+              <span className="block mt-3 text-xs text-text-muted leading-snug">
+                {product.description}
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
+
       <label className="flex flex-col gap-3 text-xs text-text-muted">
-        価格シナリオ
+        積立額
+        <select
+          value={contributionAmount}
+          onChange={(event) => setContributionAmount(Number(event.target.value))}
+          className="bg-bg-dark text-text border-2 border-border p-5 text-sm"
+        >
+          {[1_000, 5_000, 10_000].map((amount) => (
+            <option key={amount} value={amount}>
+              {formatYen(amount)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-3 text-xs text-text-muted">
+        シミュレーション設定（商品の選択とは別）
         <select
           value={scenario.id}
           onChange={(event) => resetForScenario(event.target.value)}
@@ -185,9 +253,9 @@ export function VirtualAccountPanel({
         <span className="text-right">{formatYen(view.profitLoss)}</span>
         <span className="text-text-muted">保有数量</span>
         <span className="text-right">{view.quantity.toFixed(4)}口</span>
-        <span className="text-text-muted">チーム</span>
+        <span className="text-text-muted">積立中の商品</span>
         <span className="text-right">
-          {teamSize} / {teamCapacity}人
+          {purchasedProducts.length} / {FICTIONAL_PRODUCTS.length}こ
         </span>
       </div>
 
@@ -195,9 +263,13 @@ export function VirtualAccountPanel({
         <Button
           variant="accent"
           size="md"
-          onClick={() => setAccount(contributeAndPurchase(account, scenario))}
+          onClick={() =>
+            setAccount(
+              contributeAndPurchase(account, scenario, contributionAmount, selectedProductId),
+            )
+          }
         >
-          10,000円を積み立てる
+          {formatYen(contributionAmount)}を積み立てる
         </Button>
         <Button
           size="md"

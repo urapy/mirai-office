@@ -22,9 +22,8 @@ export function getChildExplanation(scenario: PriceScenario, day: number): Child
 
   if (day === 1) {
     return {
-      headline: '世界の会社を応援するチームです',
-      explanation:
-        '「みらい世界チーム」は、世界のいろいろな会社へ少しずつ分けて投資する架空の商品です。',
+      headline: '選んだ商品から会社を応援します',
+      explanation: 'それぞれの商品は、いろいろな会社へ少しずつ分けて投資する架空の投資信託です。',
       source: 'market-summary',
     };
   }

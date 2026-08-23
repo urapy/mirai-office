@@ -4,19 +4,19 @@ import type { OfficeActor } from './demoOffice.js';
 
 export function selectVisibleOfficeActors(
   actors: readonly OfficeActor[],
-  purchaseCount: number,
+  visibleActorIds: readonly number[],
 ): OfficeActor[] {
-  const visibleCount = Math.max(0, Math.min(Math.floor(purchaseCount), actors.length));
-  return actors.slice(0, visibleCount);
+  const visibleIds = new Set(visibleActorIds);
+  return actors.filter((actor) => visibleIds.has(actor.id));
 }
 
 /** Synchronize only the fixed Mirai Office actors, leaving other agents alone. */
 export function syncOfficeActors(
   officeState: OfficeState,
   actors: readonly OfficeActor[],
-  purchaseCount: number,
+  visibleActorIds: readonly number[],
 ): void {
-  const visibleActors = selectVisibleOfficeActors(actors, purchaseCount);
+  const visibleActors = selectVisibleOfficeActors(actors, visibleActorIds);
   const visibleIds = new Set(visibleActors.map((actor) => actor.id));
 
   for (const actor of actors) {

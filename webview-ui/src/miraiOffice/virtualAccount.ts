@@ -2,7 +2,14 @@ import type { PriceScenario } from './marketScenario.js';
 
 export type InvestmentEvent =
   | { type: 'deposit'; day: number; amount: number }
-  | { type: 'purchase'; day: number; amount: number; price: number; quantity: number }
+  | {
+      type: 'purchase';
+      day: number;
+      productId: string;
+      amount: number;
+      price: number;
+      quantity: number;
+    }
   | { type: 'priceUpdated'; day: number; price: number };
 
 export interface VirtualAccountState {
@@ -11,6 +18,7 @@ export interface VirtualAccountState {
   cash: number;
   principal: number;
   quantity: number;
+  holdings: Record<string, number>;
   events: InvestmentEvent[];
 }
 
@@ -45,6 +53,7 @@ export function createVirtualAccount(scenarioId: string): VirtualAccountState {
     cash: 0,
     principal: 0,
     quantity: 0,
+    holdings: {},
     events: [],
   };
 }
@@ -53,17 +62,25 @@ export function countPurchases(state: VirtualAccountState): number {
   return state.events.filter((event) => event.type === 'purchase').length;
 }
 
+export function getPurchasedProductIds(state: VirtualAccountState): string[] {
+  return Object.entries(state.holdings)
+    .filter(([, quantity]) => quantity > 0)
+    .map(([productId]) => productId);
+}
+
 /**
  * MVP convenience transaction: deposit an amount and immediately purchase the
- * single fictional fund at the current day's fixed price.
+ * selected fictional product at the current day's fixed price.
  */
 export function contributeAndPurchase(
   state: VirtualAccountState,
   scenario: PriceScenario,
   amount = 10_000,
+  productId = 'world-growth',
 ): VirtualAccountState {
   assertScenarioMatches(state, scenario);
   assertPositiveYen(amount);
+  if (productId.length === 0) throw new Error('A product ID is required');
 
   const price = scenario.prices[state.day - 1];
   if (price === undefined) throw new Error('The account day is outside the scenario');
@@ -73,12 +90,17 @@ export function contributeAndPurchase(
     ...state,
     principal: state.principal + amount,
     quantity: state.quantity + purchasedQuantity,
+    holdings: {
+      ...state.holdings,
+      [productId]: (state.holdings[productId] ?? 0) + purchasedQuantity,
+    },
     events: [
       ...state.events,
       { type: 'deposit', day: state.day, amount },
       {
         type: 'purchase',
         day: state.day,
+        productId,
         amount,
         price,
         quantity: purchasedQuantity,

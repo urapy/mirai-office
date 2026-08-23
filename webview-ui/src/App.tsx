@@ -101,15 +101,15 @@ function App() {
     setShowAreas,
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
 
-  const [miraiTeamSize, setMiraiTeamSize] = useState(0);
-  const handleMiraiTeamSizeChange = useCallback((teamSize: number) => {
-    setMiraiTeamSize(teamSize);
+  const [miraiVisibleActorIds, setMiraiVisibleActorIds] = useState<number[]>([]);
+  const handleMiraiVisibleActorIdsChange = useCallback((actorIds: number[]) => {
+    setMiraiVisibleActorIds(actorIds);
   }, []);
 
   useEffect(() => {
     if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
-    syncOfficeActors(getOfficeState(), officeActors, miraiTeamSize);
-  }, [layoutReady, miraiTeamSize, officeActors]);
+    syncOfficeActors(getOfficeState(), officeActors, miraiVisibleActorIds);
+  }, [layoutReady, miraiVisibleActorIds, officeActors]);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
@@ -543,10 +543,7 @@ function App() {
       <ConnectionIndicator />
 
       {isBrowserRuntime && (
-        <VirtualAccountPanel
-          teamCapacity={officeActors.length || 3}
-          onTeamSizeChange={handleMiraiTeamSizeChange}
-        />
+        <VirtualAccountPanel onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange} />
       )}
 
       <ChangelogModal

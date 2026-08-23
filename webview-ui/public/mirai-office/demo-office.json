@@ -3,19 +3,19 @@
   "actors": [
     {
       "id": 1001,
-      "label": "せかい係",
+      "label": "せかい成長ファンド",
       "palette": 0,
       "activity": "working"
     },
     {
       "id": 1002,
-      "label": "くらし係",
+      "label": "くらし安心ファンド",
       "palette": 2,
       "activity": "working"
     },
     {
       "id": 1003,
-      "label": "みらい係",
+      "label": "みらい技術ファンド",
       "palette": 4,
       "activity": "working"
     }

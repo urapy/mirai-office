@@ -7,41 +7,36 @@ import { selectVisibleOfficeActors, syncOfficeActors } from '../src/miraiOffice/
 import { OfficeState } from '../src/office/engine/officeState.ts';
 
 const actors: OfficeActor[] = [
-  { id: 1, label: 'せかい係', palette: 0, activity: 'working' },
-  { id: 2, label: 'くらし係', palette: 2, activity: 'working' },
-  { id: 3, label: 'みらい係', palette: 4, activity: 'working' },
+  { id: 1, label: 'せかい成長ファンド', palette: 0, activity: 'working' },
+  { id: 2, label: 'くらし安心ファンド', palette: 2, activity: 'working' },
+  { id: 3, label: 'みらい技術ファンド', palette: 4, activity: 'working' },
 ];
 
-test('unlocks one actor for each purchase', () => {
-  assert.deepEqual(selectVisibleOfficeActors(actors, 0), []);
+test('shows the actors belonging to purchased products', () => {
+  assert.deepEqual(selectVisibleOfficeActors(actors, []), []);
   assert.deepEqual(
-    selectVisibleOfficeActors(actors, 1).map((actor) => actor.label),
-    ['せかい係'],
+    selectVisibleOfficeActors(actors, [2]).map((actor) => actor.label),
+    ['くらし安心ファンド'],
   );
   assert.deepEqual(
-    selectVisibleOfficeActors(actors, 2).map((actor) => actor.label),
-    ['せかい係', 'くらし係'],
+    selectVisibleOfficeActors(actors, [1, 3]).map((actor) => actor.label),
+    ['せかい成長ファンド', 'みらい技術ファンド'],
   );
-});
-
-test('caps the visible team at the available three actors', () => {
-  assert.equal(selectVisibleOfficeActors(actors, 3).length, 3);
-  assert.equal(selectVisibleOfficeActors(actors, 10).length, 3);
 });
 
 test('adds, removes, and revives only the unlocked Mirai Office actors', () => {
   const officeState = new OfficeState();
 
-  syncOfficeActors(officeState, actors, 1);
+  syncOfficeActors(officeState, actors, [1]);
   assert.equal(officeState.characters.size, 1);
-  assert.equal(officeState.characters.get(1)?.agentName, 'せかい係');
+  assert.equal(officeState.characters.get(1)?.agentName, 'せかい成長ファンド');
 
-  syncOfficeActors(officeState, actors, 0);
+  syncOfficeActors(officeState, actors, []);
   assert.equal(officeState.characters.get(1)?.matrixEffect, 'despawn');
 
-  syncOfficeActors(officeState, actors, 1);
+  syncOfficeActors(officeState, actors, [1]);
   assert.equal(officeState.characters.get(1)?.matrixEffect, 'spawn');
 
-  syncOfficeActors(officeState, actors, 3);
+  syncOfficeActors(officeState, actors, [1, 2, 3]);
   assert.equal(officeState.characters.size, 3);
 });
