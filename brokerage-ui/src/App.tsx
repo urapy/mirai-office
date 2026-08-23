@@ -1,0 +1,308 @@
+import { useEffect, useMemo, useState } from 'react';
+
+import { API_BASE, contribute, loadDashboard, loadHistory, resetAccount } from './api.js';
+import { PriceChart } from './PriceChart.js';
+import type { Account, AccountEvent, Product, Quote } from './types.js';
+
+const yen = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' });
+const number = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 4 });
+
+function signedYen(value: number): string {
+  return `${value > 0 ? '+' : ''}${yen.format(value)}`;
+}
+
+export default function App() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [events, setEvents] = useState<AccountEvent[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState('world-growth');
+  const [amount, setAmount] = useState(10_000);
+  const [priceHistory, setPriceHistory] = useState<Record<string, Quote[]>>({});
+  const [connection, setConnection] = useState<'connecting' | 'live' | 'stopped'>('connecting');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    void loadDashboard()
+      .then((dashboard) => {
+        setProducts(dashboard.products);
+        setQuotes(dashboard.quotes);
+        setAccount(dashboard.account);
+        setEvents(dashboard.events);
+        setPriceHistory(
+          Object.fromEntries(dashboard.quotes.map((quote) => [quote.productId, [quote]])),
+        );
+        setError(null);
+      })
+      .catch((reason: unknown) => {
+        setConnection('stopped');
+        setError(reason instanceof Error ? reason.message : String(reason));
+      });
+
+    const source = new EventSource(`${API_BASE}/api/stream/quotes`);
+    source.addEventListener('quotes', (event) => {
+      const payload = JSON.parse((event as MessageEvent<string>).data) as {
+        quotes: Quote[];
+        account: Account;
+        events: AccountEvent[];
+      };
+      setQuotes(payload.quotes);
+      setAccount(payload.account);
+      setEvents(payload.events);
+      setPriceHistory((current) => {
+        const next = { ...current };
+        for (const quote of payload.quotes) {
+          next[quote.productId] = [...(next[quote.productId] ?? []), quote].slice(-120);
+        }
+        return next;
+      });
+      setConnection('live');
+      setError(null);
+    });
+    source.onerror = () => setConnection('stopped');
+    return () => source.close();
+  }, []);
+
+  const liveAccount = useMemo(() => {
+    if (!account) return null;
+    const holdings = account.holdings.map((holding) => {
+      const price = quotes.find((quote) => quote.productId === holding.productId)?.price;
+      if (price === undefined) return holding;
+      const valuation = Math.round(holding.quantity * price);
+      return {
+        ...holding,
+        currentPrice: price,
+        valuation,
+        profitLoss: valuation - holding.quantity * holding.averageCost,
+      };
+    });
+    const valuation = holdings.reduce((sum, holding) => sum + holding.valuation, 0);
+    return { ...account, holdings, valuation, profitLoss: valuation - account.principal };
+  }, [account, quotes]);
+
+  const selectedProduct = products.find((product) => product.id === selectedProductId);
+  const selectedQuote = quotes.find((quote) => quote.productId === selectedProductId);
+
+  const handleContribution = async () => {
+    setSubmitting(true);
+    try {
+      setAccount(await contribute(selectedProductId, amount));
+      setEvents((await loadHistory()).events);
+      setError(null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setSubmitting(true);
+    try {
+      setAccount(await resetAccount());
+      setEvents([]);
+      setError(null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="brand">
+          <span className="brand-mark">M</span>
+          <div>
+            <strong>みらい証券</strong>
+            <small>SIMULATION</small>
+          </div>
+        </div>
+        <div className={`connection ${connection}`}>
+          <span />
+          {connection === 'live'
+            ? 'リアルタイム更新中'
+            : connection === 'connecting'
+              ? '接続中'
+              : '更新停止'}
+        </div>
+      </header>
+
+      <main>
+        <section className="hero">
+          <div>
+            <p className="eyebrow">仮想資産サマリー</p>
+            <h1>{liveAccount ? yen.format(liveAccount.valuation) : '—'}</h1>
+            <p className={`pnl ${(liveAccount?.profitLoss ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+              損益 {liveAccount ? signedYen(liveAccount.profitLoss) : '—'}
+            </p>
+          </div>
+          <div className="hero-metrics">
+            <div>
+              <span>投資した金額</span>
+              <strong>{liveAccount ? yen.format(liveAccount.principal) : '—'}</strong>
+            </div>
+            <div>
+              <span>保有商品</span>
+              <strong>{liveAccount?.holdings.length ?? 0}商品</strong>
+            </div>
+          </div>
+        </section>
+
+        {error && <div className="error-banner">APIに接続できません：{error}</div>}
+
+        <section className="product-grid">
+          {products.map((product) => {
+            const quote = quotes.find((item) => item.productId === product.id);
+            return (
+              <button
+                key={product.id}
+                className={`product-card ${selectedProductId === product.id ? 'selected' : ''}`}
+                onClick={() => setSelectedProductId(product.id)}
+              >
+                <span className="theme">{product.theme}</span>
+                <strong>{product.name}</strong>
+                <span className="price">{quote ? yen.format(quote.price) : '—'}</span>
+                <span className={`change ${(quote?.change ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+                  {quote
+                    ? `${quote.change >= 0 ? '+' : ''}${quote.change}円 (${(quote.changePercent * 100).toFixed(2)}%)`
+                    : '—'}
+                </span>
+              </button>
+            );
+          })}
+        </section>
+
+        <div className="content-grid">
+          <section className="panel chart-panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">リアルタイム価格</p>
+                <h2>{selectedProduct?.name ?? '商品を選択'}</h2>
+              </div>
+              <strong>{selectedQuote ? yen.format(selectedQuote.price) : '—'}</strong>
+            </div>
+            <PriceChart quotes={priceHistory[selectedProductId] ?? []} />
+          </section>
+
+          <section className="panel contribution-panel">
+            <p className="eyebrow">積立シミュレーション</p>
+            <h2>選んだ商品へ積み立てる</h2>
+            <label>
+              商品
+              <select
+                value={selectedProductId}
+                onChange={(event) => setSelectedProductId(event.target.value)}
+              >
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              積立額
+              <select value={amount} onChange={(event) => setAmount(Number(event.target.value))}>
+                {[1_000, 5_000, 10_000, 30_000].map((value) => (
+                  <option key={value} value={value}>
+                    {yen.format(value)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              className="primary-button"
+              disabled={submitting || connection !== 'live'}
+              onClick={() => void handleContribution()}
+            >
+              {submitting ? '処理中…' : `${yen.format(amount)}を積み立てる`}
+            </button>
+            <p className="disclaimer">
+              学習用の架空商品です。実在する金融商品や将来の利益を示すものではありません。
+            </p>
+          </section>
+        </div>
+
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">PORTFOLIO</p>
+              <h2>保有商品</h2>
+            </div>
+            <button
+              className="text-button"
+              disabled={submitting || connection !== 'live'}
+              onClick={() => void handleReset()}
+            >
+              口座をリセット
+            </button>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th>
+                  <th>保有数量</th>
+                  <th>平均取得価格</th>
+                  <th>現在価格</th>
+                  <th>評価額</th>
+                  <th>損益</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liveAccount?.holdings.length ? (
+                  liveAccount.holdings.map((holding) => (
+                    <tr key={holding.productId}>
+                      <td>{products.find((product) => product.id === holding.productId)?.name}</td>
+                      <td>{number.format(holding.quantity)}口</td>
+                      <td>{yen.format(holding.averageCost)}</td>
+                      <td>{yen.format(holding.currentPrice)}</td>
+                      <td>{yen.format(holding.valuation)}</td>
+                      <td className={holding.profitLoss >= 0 ? 'positive' : 'negative'}>
+                        {signedYen(holding.profitLoss)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="empty-cell">
+                      まだ積み立てはありません
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="panel">
+          <p className="eyebrow">ACTIVITY</p>
+          <h2>最近の履歴</h2>
+          <div className="event-list">
+            {events
+              .slice(-8)
+              .reverse()
+              .map((event) => (
+                <div key={event.id}>
+                  <span className="event-icon">{event.type === 'purchase' ? '買' : '入'}</span>
+                  <div>
+                    <strong>
+                      {event.type === 'purchase' ? '商品を買い付けました' : '積立金を入金しました'}
+                    </strong>
+                    <small>
+                      {products.find((product) => product.id === event.productId)?.name}
+                    </small>
+                  </div>
+                  <span>{yen.format(event.amount)}</span>
+                </div>
+              ))}
+            {events.length === 0 && <p className="empty-cell">履歴はありません</p>}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}

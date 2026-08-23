@@ -5,6 +5,13 @@ import { getChildExplanation } from './childExplanation.js';
 import { parsePriceScenarioCatalog, type PriceScenarioCatalog } from './marketScenario.js';
 import { FICTIONAL_PRODUCTS } from './productCatalog.js';
 import {
+  contributeRealtime,
+  loadRealtimeSnapshot,
+  type RealtimeSnapshot,
+  resetRealtimeAccount,
+  subscribeRealtimeQuotes,
+} from './realtimeApi.js';
+import {
   advanceVirtualAccountDay,
   contributeAndPurchase,
   createVirtualAccount,
@@ -38,6 +45,12 @@ export function VirtualAccountPanel({
   const [account, setAccount] = useState<VirtualAccountState | null>(null);
   const [selectedProductId, setSelectedProductId] = useState(FICTIONAL_PRODUCTS[0].id);
   const [contributionAmount, setContributionAmount] = useState(10_000);
+  const [realtimeSnapshot, setRealtimeSnapshot] = useState<RealtimeSnapshot | null>(null);
+  const [realtimeConnection, setRealtimeConnection] = useState<'connecting' | 'live' | 'stopped'>(
+    'connecting',
+  );
+  const [realtimeError, setRealtimeError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,14 +74,63 @@ export function VirtualAccountPanel({
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadRealtimeSnapshot(controller.signal)
+      .then((snapshot) => {
+        setRealtimeSnapshot(snapshot);
+        setRealtimeConnection('live');
+        setRealtimeError(null);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setRealtimeConnection('stopped');
+        setRealtimeError(error instanceof Error ? error.message : String(error));
+      });
+    const unsubscribe = subscribeRealtimeQuotes(
+      (snapshot) => {
+        setRealtimeSnapshot(snapshot);
+        setRealtimeError(null);
+      },
+      (connected) => setRealtimeConnection(connected ? 'live' : 'stopped'),
+    );
+    return () => {
+      controller.abort();
+      unsubscribe();
+    };
+  }, []);
+
   const scenario = useMemo(
     () => catalog?.scenarios.find((item) => item.id === account?.scenarioId) ?? null,
     [account?.scenarioId, catalog],
   );
   const view = account && scenario ? getVirtualAccountView(account, scenario) : null;
+  const isRealtime = realtimeSnapshot !== null;
+  const selectedRealtimeQuote = realtimeSnapshot?.quotes.find(
+    (quote) => quote.productId === selectedProductId,
+  );
+  const selectedRealtimeHolding = realtimeSnapshot?.account.holdings.find(
+    (holding) => holding.productId === selectedProductId,
+  );
+  const displayView = realtimeSnapshot
+    ? {
+        day: 1,
+        price: selectedRealtimeQuote?.price ?? 0,
+        principal: realtimeSnapshot.account.principal,
+        quantity: selectedRealtimeHolding?.quantity ?? 0,
+        valuation: realtimeSnapshot.account.valuation,
+        profitLoss: realtimeSnapshot.account.profitLoss,
+        hasInvestment: realtimeSnapshot.account.principal > 0,
+      }
+    : view;
   const purchasedProductIds = useMemo(
-    () => (account ? getPurchasedProductIds(account) : []),
-    [account],
+    () =>
+      realtimeSnapshot
+        ? realtimeSnapshot.account.holdings.map((holding) => holding.productId)
+        : account
+          ? getPurchasedProductIds(account)
+          : [],
+    [account, realtimeSnapshot],
   );
   const purchasedProducts = useMemo(
     () => FICTIONAL_PRODUCTS.filter((product) => purchasedProductIds.includes(product.id)),
@@ -95,6 +157,37 @@ export function VirtualAccountPanel({
     if (story?.tone === 'challenge') onStoryCue?.('sweat', nextAccount.day);
   };
 
+  const handleContribution = async () => {
+    if (!isRealtime) {
+      setAccount(contributeAndPurchase(account!, scenario!, contributionAmount, selectedProductId));
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const nextAccount = await contributeRealtime(selectedProductId, contributionAmount);
+      setRealtimeSnapshot((current) => (current ? { ...current, account: nextAccount } : current));
+      setRealtimeError(null);
+    } catch (error) {
+      setRealtimeError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!isRealtime) {
+      resetForScenario(scenario!.id);
+      return;
+    }
+    try {
+      const nextAccount = await resetRealtimeAccount();
+      setRealtimeSnapshot((current) => (current ? { ...current, account: nextAccount } : current));
+      setRealtimeError(null);
+    } catch (error) {
+      setRealtimeError(error instanceof Error ? error.message : String(error));
+    }
+  };
+
   if (loadError) {
     return (
       <div role="alert" className="absolute top-8 right-8 z-30 pixel-panel p-12 text-sm max-w-3xs">
@@ -103,7 +196,7 @@ export function VirtualAccountPanel({
     );
   }
 
-  if (!catalog || !account || !scenario || !view) {
+  if (!catalog || !account || !scenario || !view || !displayView) {
     return (
       <div role="status" className="absolute top-8 right-8 z-30 pixel-panel p-12 text-sm">
         仮想口座を準備しています…
@@ -125,7 +218,16 @@ export function VirtualAccountPanel({
   }
 
   if (screen === 'child') {
-    const childExplanation = getChildExplanation(scenario, view.day);
+    const childExplanation = isRealtime
+      ? {
+          headline:
+            realtimeConnection === 'live'
+              ? '商品の値段をリアルタイムで受け取っています'
+              : '商品の値段は、いま更新を待っています',
+          explanation:
+            '架空の市場では、いろいろな人の考えや会社への期待によって、商品の値段が少しずつ動いています。',
+        }
+      : getChildExplanation(scenario, view.day);
     return (
       <section className="absolute top-8 right-8 z-30 pixel-panel p-12 w-320 max-h-[calc(100vh-16px)] overflow-y-auto flex flex-col gap-10">
         <div className="flex items-start justify-between gap-8">
@@ -134,7 +236,7 @@ export function VirtualAccountPanel({
             <h2 className="m-0 text-lg">わたしの投資チーム</h2>
           </div>
           <div className="flex flex-col items-end gap-3 text-right text-sm text-text-muted">
-            <div>{view.day}日目 / 30日</div>
+            <div>{isRealtime ? 'リアルタイム' : `${view.day}日目 / 30日`}</div>
             <div>
               商品 {purchasedProducts.length} / {FICTIONAL_PRODUCTS.length}こ
             </div>
@@ -152,15 +254,15 @@ export function VirtualAccountPanel({
         <div className="grid grid-cols-1 gap-5">
           <div className="bg-bg-dark border-2 border-border p-8">
             <p className="m-0 text-xs text-text-muted">投資したお金（元本）</p>
-            <p className="m-0 text-lg">{formatYen(view.principal)}</p>
+            <p className="m-0 text-lg">{formatYen(displayView.principal)}</p>
           </div>
           <div className="bg-bg-dark border-2 border-border p-8">
             <p className="m-0 text-xs text-text-muted">いまの価値（評価額）</p>
-            <p className="m-0 text-lg">{formatYen(view.valuation)}</p>
+            <p className="m-0 text-lg">{formatYen(displayView.valuation)}</p>
           </div>
           <div className="bg-bg-dark border-2 border-border p-8">
             <p className="m-0 text-xs text-text-muted">増えた・減った金額（損益）</p>
-            <p className="m-0 text-lg">{formatSignedYen(view.profitLoss)}</p>
+            <p className="m-0 text-lg">{formatSignedYen(displayView.profitLoss)}</p>
           </div>
         </div>
 
@@ -183,7 +285,7 @@ export function VirtualAccountPanel({
           </div>
         )}
 
-        {!view.hasInvestment && (
+        {!displayView.hasInvestment && (
           <p className="m-0 text-sm leading-snug">
             おうちの人といっしょに、最初の積み立てを始めましょう。
           </p>
@@ -222,6 +324,21 @@ export function VirtualAccountPanel({
           </Button>
         </div>
       </div>
+
+      <div
+        className={`border-2 p-6 text-xs ${
+          realtimeConnection === 'live'
+            ? 'border-status-success text-status-success'
+            : 'border-status-permission text-text-muted'
+        }`}
+      >
+        {isRealtime
+          ? realtimeConnection === 'live'
+            ? '仮想市場APIからリアルタイム更新中'
+            : '更新停止：最後に受信した金額を表示しています'
+          : 'ローカルデモモード：仮想市場APIは停止しています'}
+      </div>
+      {realtimeError && <p className="m-0 text-xs text-status-error">{realtimeError}</p>}
 
       <fieldset className="m-0 p-0 border-0 flex flex-col gap-5">
         <legend className="mb-3 text-xs text-text-muted">積み立てる架空の商品</legend>
@@ -268,35 +385,41 @@ export function VirtualAccountPanel({
         </select>
       </label>
 
-      <label className="flex flex-col gap-3 text-xs text-text-muted">
-        シミュレーション設定（商品の選択とは別）
-        <select
-          value={scenario.id}
-          onChange={(event) => resetForScenario(event.target.value)}
-          className="bg-bg-dark text-text border-2 border-border p-5 text-sm"
-        >
-          {catalog.scenarios.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <p className="m-0 text-xs text-text-muted leading-snug">{scenario.purpose}</p>
+      {!isRealtime && (
+        <>
+          <label className="flex flex-col gap-3 text-xs text-text-muted">
+            ローカルデモのシナリオ設定
+            <select
+              value={scenario.id}
+              onChange={(event) => resetForScenario(event.target.value)}
+              className="bg-bg-dark text-text border-2 border-border p-5 text-sm"
+            >
+              {catalog.scenarios.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="m-0 text-xs text-text-muted leading-snug">{scenario.purpose}</p>
+        </>
+      )}
 
       <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm">
-        <span className="text-text-muted">日付</span>
-        <span className="text-right">{view.day}日目 / 30日</span>
+        <span className="text-text-muted">更新</span>
+        <span className="text-right">
+          {isRealtime ? `ティック ${selectedRealtimeQuote?.tick ?? 0}` : `${view.day}日目 / 30日`}
+        </span>
         <span className="text-text-muted">現在価格</span>
-        <span className="text-right">{formatYen(view.price)}</span>
+        <span className="text-right">{formatYen(displayView.price)}</span>
         <span className="text-text-muted">元本</span>
-        <span className="text-right">{formatYen(view.principal)}</span>
+        <span className="text-right">{formatYen(displayView.principal)}</span>
         <span className="text-text-muted">評価額</span>
-        <span className="text-right">{formatYen(view.valuation)}</span>
+        <span className="text-right">{formatYen(displayView.valuation)}</span>
         <span className="text-text-muted">損益</span>
-        <span className="text-right">{formatYen(view.profitLoss)}</span>
-        <span className="text-text-muted">保有数量</span>
-        <span className="text-right">{view.quantity.toFixed(4)}口</span>
+        <span className="text-right">{formatYen(displayView.profitLoss)}</span>
+        <span className="text-text-muted">{isRealtime ? '選択商品の保有数量' : '保有数量'}</span>
+        <span className="text-right">{displayView.quantity.toFixed(4)}口</span>
         <span className="text-text-muted">積立中の商品</span>
         <span className="text-right">
           {purchasedProducts.length} / {FICTIONAL_PRODUCTS.length}こ
@@ -307,23 +430,27 @@ export function VirtualAccountPanel({
         <Button
           variant="accent"
           size="md"
-          onClick={() =>
-            setAccount(
-              contributeAndPurchase(account, scenario, contributionAmount, selectedProductId),
-            )
-          }
+          disabled={isSubmitting || (isRealtime && realtimeConnection !== 'live')}
+          onClick={() => void handleContribution()}
         >
-          {formatYen(contributionAmount)}を積み立てる
+          {isSubmitting ? '処理中…' : `${formatYen(contributionAmount)}を積み立てる`}
         </Button>
+        {!isRealtime && (
+          <Button
+            size="md"
+            disabled={!view.hasInvestment || isFinalDay}
+            onClick={advanceDay}
+            className="disabled:cursor-default disabled:opacity-(--btn-disabled-opacity)"
+          >
+            1日進める
+          </Button>
+        )}
         <Button
           size="md"
-          disabled={!view.hasInvestment || isFinalDay}
-          onClick={advanceDay}
-          className="disabled:cursor-default disabled:opacity-(--btn-disabled-opacity)"
+          variant="ghost"
+          disabled={isSubmitting || (isRealtime && realtimeConnection !== 'live')}
+          onClick={() => void handleReset()}
         >
-          1日進める
-        </Button>
-        <Button size="md" variant="ghost" onClick={() => resetForScenario(scenario.id)}>
           はじめから
         </Button>
       </div>
