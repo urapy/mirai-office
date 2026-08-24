@@ -72,6 +72,32 @@ export function subscribeRealtimeQuotes(
   onSnapshot: (snapshot: RealtimeSnapshot) => void,
   onConnectionChange: (connected: boolean) => void,
 ): () => void {
+  if (import.meta.env.VITE_REALTIME_MODE === 'poll') {
+    let stopped = false;
+    let running = false;
+    const poll = async () => {
+      if (stopped || running) return;
+      running = true;
+      try {
+        const snapshot = await loadRealtimeSnapshot();
+        if (!stopped) {
+          onSnapshot(snapshot);
+          onConnectionChange(true);
+        }
+      } catch {
+        if (!stopped) onConnectionChange(false);
+      } finally {
+        running = false;
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 1_000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }
+
   const source = new EventSource(`${SIMULATION_API_BASE}/api/stream/quotes`);
   source.addEventListener('quotes', (event) => {
     const payload = JSON.parse((event as MessageEvent<string>).data) as Omit<

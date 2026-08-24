@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { API_BASE, contribute, loadDashboard, loadHistory, resetAccount } from './api.js';
+import { contribute, loadHistory, resetAccount, subscribeDashboard } from './api.js';
+import {
+  cloudAuthEnabled,
+  type GuardianUser,
+  observeGuardian,
+  signInGuardian,
+  signOutGuardian,
+} from './auth.js';
 import { PriceChart } from './PriceChart.js';
 import type { Account, AccountEvent, Product, Quote } from './types.js';
 
@@ -23,47 +30,44 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
+  const [guardian, setGuardian] = useState<GuardianUser | null>(null);
+  const [authReady, setAuthReady] = useState(!cloudAuthEnabled);
 
   useEffect(() => {
-    void loadDashboard()
-      .then((dashboard) => {
+    const unsubscribe = subscribeDashboard(
+      (dashboard) => {
         setProducts(dashboard.products);
         setQuotes(dashboard.quotes);
         setAccount(dashboard.account);
         setEvents(dashboard.events);
-        setPriceHistory(
-          Object.fromEntries(dashboard.quotes.map((quote) => [quote.productId, [quote]])),
-        );
+        setPriceHistory((current) => {
+          const next = { ...current };
+          for (const quote of dashboard.quotes) {
+            const history = next[quote.productId] ?? [];
+            if (history.at(-1)?.tick === quote.tick) continue;
+            next[quote.productId] = [...history, quote].slice(-120);
+          }
+          return next;
+        });
+        setConnection('live');
         setError(null);
-      })
-      .catch((reason: unknown) => {
+      },
+      (reason: unknown) => {
         setConnection('stopped');
         setError(reason instanceof Error ? reason.message : String(reason));
-      });
-
-    const source = new EventSource(`${API_BASE}/api/stream/quotes`);
-    source.addEventListener('quotes', (event) => {
-      const payload = JSON.parse((event as MessageEvent<string>).data) as {
-        quotes: Quote[];
-        account: Account;
-        events: AccountEvent[];
-      };
-      setQuotes(payload.quotes);
-      setAccount(payload.account);
-      setEvents(payload.events);
-      setPriceHistory((current) => {
-        const next = { ...current };
-        for (const quote of payload.quotes) {
-          next[quote.productId] = [...(next[quote.productId] ?? []), quote].slice(-120);
-        }
-        return next;
-      });
-      setConnection('live');
-      setError(null);
-    });
-    source.onerror = () => setConnection('stopped');
-    return () => source.close();
+      },
+    );
+    return unsubscribe;
   }, []);
+
+  useEffect(
+    () =>
+      observeGuardian((user) => {
+        setGuardian(user);
+        setAuthReady(true);
+      }),
+    [],
+  );
 
   const liveAccount = useMemo(() => {
     if (!account) return null;
@@ -84,6 +88,16 @@ export default function App() {
 
   const selectedProduct = products.find((product) => product.id === selectedProductId);
   const selectedQuote = quotes.find((quote) => quote.productId === selectedProductId);
+  const canManage = !cloudAuthEnabled || guardian !== null;
+
+  const handleSignIn = async () => {
+    try {
+      await signInGuardian();
+      setError(null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
 
   const handleContribution = async () => {
     setSubmitting(true);
@@ -122,13 +136,26 @@ export default function App() {
             <small>SIMULATION</small>
           </div>
         </div>
-        <div className={`connection ${connection}`}>
-          <span />
-          {connection === 'live'
-            ? 'リアルタイム更新中'
-            : connection === 'connecting'
-              ? '接続中'
-              : '更新停止'}
+        <div className="topbar-actions">
+          <div className={`connection ${connection}`}>
+            <span />
+            {connection === 'live'
+              ? 'リアルタイム更新中'
+              : connection === 'connecting'
+                ? '接続中'
+                : '更新停止'}
+          </div>
+          {cloudAuthEnabled &&
+            authReady &&
+            (guardian ? (
+              <button className="auth-button" onClick={() => void signOutGuardian()}>
+                ログアウト
+              </button>
+            ) : (
+              <button className="auth-button is-primary" onClick={() => void handleSignIn()}>
+                保護者ログイン
+              </button>
+            ))}
         </div>
       </header>
 
@@ -217,20 +244,27 @@ export default function App() {
             </label>
             <button
               className="primary-button"
-              disabled={submitting || connection !== 'live'}
+              disabled={submitting || connection !== 'live' || !canManage}
               onClick={() => void handleContribution()}
             >
               {submitting ? '処理中…' : `${yen.format(amount)}を積み立てる`}
             </button>
             <button
               className="reset-button"
-              disabled={submitting || connection !== 'live' || (liveAccount?.principal ?? 0) === 0}
+              disabled={
+                submitting ||
+                connection !== 'live' ||
+                !canManage ||
+                (liveAccount?.principal ?? 0) === 0
+              }
               onClick={() => setIsResetOpen(true)}
             >
               積立額を0円にリセット
             </button>
             <p className="disclaimer">
-              学習用の架空商品です。実在する金融商品や将来の利益を示すものではありません。
+              {cloudAuthEnabled && !guardian
+                ? '積立とリセットには、保護者のGoogleログインが必要です。'
+                : '学習用の架空商品です。実在する金融商品や将来の利益を示すものではありません。'}
             </p>
           </section>
         </div>
@@ -243,7 +277,12 @@ export default function App() {
             </div>
             <button
               className="text-button"
-              disabled={submitting || connection !== 'live' || (liveAccount?.principal ?? 0) === 0}
+              disabled={
+                submitting ||
+                connection !== 'live' ||
+                !canManage ||
+                (liveAccount?.principal ?? 0) === 0
+              }
               onClick={() => setIsResetOpen(true)}
             >
               積立記録をリセット

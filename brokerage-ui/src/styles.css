@@ -88,6 +88,25 @@ button {
 .connection.stopped span {
   background: #fb7185;
 }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.auth-button {
+  padding: 9px 12px;
+  color: #9eb1ca;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #2a405d;
+  border-radius: 10px;
+}
+.auth-button.is-primary {
+  color: #07111f;
+  font-weight: 800;
+  background: #5eead4;
+  border-color: #5eead4;
+}
 main {
   width: min(1180px, 90vw);
   margin: 0 auto;
@@ -437,5 +456,8 @@ td:first-child {
   }
   .topbar {
     padding: 0 3vw;
+  }
+  .connection {
+    display: none;
   }
 }

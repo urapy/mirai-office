@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "mirai-office-urapy-2026"
+  },
+  "targets": {
+    "mirai-office-urapy-2026": {
+      "hosting": {
+        "office": ["mirai-office-urapy-2026"],
+        "account": ["mirai-account-urapy-2026"]
+      }
+    }
+  }
+}

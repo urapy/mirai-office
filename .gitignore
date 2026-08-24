@@ -30,6 +30,9 @@ allure-report/
 # Environment files
 .env*
 !.env.example
+!brokerage-ui/.env.production.example
+!webview-ui/.env.production
+/functions/lib/
 
 # Project-specific
 .claude

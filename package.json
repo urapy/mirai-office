@@ -12,7 +12,8 @@
     "server",
     "webview-ui",
     "simulation-server",
-    "brokerage-ui"
+    "brokerage-ui",
+    "functions"
   ],
   "icon": "icon.png",
   "license": "MIT",
@@ -102,6 +103,8 @@
     "dev:office": "npm --workspace webview-ui run dev -- --host 127.0.0.1 --port 5173",
     "dev:mirai": "npm-run-all -p dev:simulation dev:brokerage dev:office",
     "build:mirai": "npm run build:simulation && npm run build:brokerage && npm run build:webview",
+    "build:firebase": "npm run build:mirai && npm --workspace functions run build",
+    "deploy:firebase": "npm run build:firebase && firebase deploy",
     "compile": "npm run asyncapi:generate && npm run check-types && npm run lint && node esbuild.js && npm run build:webview",
     "build": "npm run compile",
     "watch": "npm-run-all -p watch:*",
@@ -112,7 +115,7 @@
     "asyncapi:validate": "node scripts/validate-asyncapi.mjs",
     "check-types": "tsc --noEmit && tsc --noEmit -p server/tsconfig.test.json",
     "prepare": "husky",
-    "lint": "eslint adapters/vscode server core simulation-server/src simulation-server/test && cd webview-ui && eslint . && cd ../brokerage-ui && eslint .",
+    "lint": "eslint adapters/vscode server core simulation-server/src simulation-server/test && cd webview-ui && eslint . && cd ../brokerage-ui && eslint . && cd ../functions && eslint src test",
     "lint:fix": "eslint adapters/vscode server core --fix && cd webview-ui && eslint . --fix",
     "import-tileset": "tsx scripts/import-tileset-cli.ts",
     "format": "prettier --write \"adapters/vscode/**/*.ts\" \"server/**/*.ts\" \"core/src/**/*.ts\" \"webview-ui/src/**/*.{ts,tsx,css}\" \"*.{js,mjs}\" \"webview-ui/*.{js,ts}\"",
