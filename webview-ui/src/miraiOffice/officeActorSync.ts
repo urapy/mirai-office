@@ -2,21 +2,6 @@ import { startMatrixEffect } from '../office/engine/matrixEffectState.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 import type { OfficeActor } from './demoOffice.js';
 
-export type MiraiWorkCue = 'music' | 'sweat';
-
-const MIRAI_WORK_CUE_SEQUENCE: readonly MiraiWorkCue[] = ['music', 'sweat', 'music', 'music'];
-
-export function getMiraiWorkCue(
-  visibleActorIds: readonly number[],
-  cueIndex: number,
-): { actorId: number; cue: MiraiWorkCue } | null {
-  if (visibleActorIds.length === 0) return null;
-  return {
-    actorId: visibleActorIds[cueIndex % visibleActorIds.length],
-    cue: MIRAI_WORK_CUE_SEQUENCE[cueIndex % MIRAI_WORK_CUE_SEQUENCE.length],
-  };
-}
-
 export function selectVisibleOfficeActors(
   actors: readonly OfficeActor[],
   visibleActorIds: readonly number[],

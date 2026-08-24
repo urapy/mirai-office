@@ -17,7 +17,9 @@ import { useEditorActions } from './hooks/useEditorActions.js';
 import { useEditorKeyboard } from './hooks/useEditorKeyboard.js';
 import { useExtensionMessages } from './hooks/useExtensionMessages.js';
 import { useIntroTour } from './hooks/useIntroTour.js';
-import { getMiraiWorkCue, syncOfficeActors } from './miraiOffice/officeActorSync.js';
+import { syncOfficeActors } from './miraiOffice/officeActorSync.js';
+import { getFictionalProduct } from './miraiOffice/productCatalog.js';
+import type { RealtimeWorkEvent } from './miraiOffice/realtimeApi.js';
 import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
 import { ToolOverlay } from './office/components/ToolOverlay.js';
@@ -110,6 +112,10 @@ function App() {
       return isUnchanged ? current : actorIds;
     });
   }, []);
+  const handleMiraiWorkEvent = useCallback((event: RealtimeWorkEvent) => {
+    const actorId = getFictionalProduct(event.productId).actorId;
+    getOfficeState().showStoryCueBubble(actorId, event.cue);
+  }, []);
   useEffect(() => {
     if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
     syncOfficeActors(getOfficeState(), officeActors, miraiVisibleActorIds);
@@ -146,23 +152,6 @@ function App() {
       for (const timer of returnTimers) window.clearTimeout(timer);
       for (const actorId of miraiVisibleActorIds) officeState.setAgentActive(actorId, true);
     };
-  }, [layoutReady, miraiVisibleActorIds]);
-
-  useEffect(() => {
-    if (!isBrowserRuntime || !layoutReady || miraiVisibleActorIds.length === 0) return;
-    const officeState = getOfficeState();
-    let cueIndex = 0;
-    let cueTimer = 0;
-
-    const showNextCue = () => {
-      const nextCue = getMiraiWorkCue(miraiVisibleActorIds, cueIndex);
-      if (nextCue) officeState.showStoryCueBubble(nextCue.actorId, nextCue.cue);
-      cueIndex++;
-      cueTimer = window.setTimeout(showNextCue, 7_000 + Math.random() * 3_000);
-    };
-
-    cueTimer = window.setTimeout(showNextCue, 2_000);
-    return () => window.clearTimeout(cueTimer);
   }, [layoutReady, miraiVisibleActorIds]);
 
   // Show migration notice once layout reset is detected
@@ -597,7 +586,10 @@ function App() {
       <ConnectionIndicator />
 
       {isBrowserRuntime && (
-        <VirtualAccountPanel onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange} />
+        <VirtualAccountPanel
+          onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange}
+          onWorkEvent={handleMiraiWorkEvent}
+        />
       )}
 
       <ChangelogModal

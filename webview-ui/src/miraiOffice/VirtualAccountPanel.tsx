@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FICTIONAL_PRODUCTS } from './productCatalog.js';
 import {
@@ -6,11 +6,13 @@ import {
   loadRealtimeSnapshot,
   type RealtimeHolding,
   type RealtimeSnapshot,
+  type RealtimeWorkEvent,
   subscribeRealtimeQuotes,
 } from './realtimeApi.js';
 
 interface VirtualAccountPanelProps {
   onVisibleActorIdsChange?: (actorIds: number[]) => void;
+  onWorkEvent?: (event: RealtimeWorkEvent) => void;
 }
 
 function formatYen(value: number): string {
@@ -50,17 +52,34 @@ function HoldingRow({ holding }: { holding: RealtimeHolding }) {
   );
 }
 
-export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountPanelProps) {
+export function VirtualAccountPanel({
+  onVisibleActorIdsChange,
+  onWorkEvent,
+}: VirtualAccountPanelProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [snapshot, setSnapshot] = useState<RealtimeSnapshot | null>(null);
   const [connection, setConnection] = useState<'connecting' | 'live' | 'stopped'>('connecting');
   const [error, setError] = useState<string | null>(null);
+  const [latestWorkEvent, setLatestWorkEvent] = useState<RealtimeWorkEvent | null>(null);
+  const handledWorkEventIds = useRef(new Set<string>());
 
   useEffect(() => {
     const controller = new AbortController();
     void loadRealtimeSnapshot(controller.signal)
       .then((nextSnapshot) => {
         setSnapshot(nextSnapshot);
+        const ownedProductIds = new Set(
+          nextSnapshot.account.holdings.map((holding) => holding.productId),
+        );
+        for (const workEvent of nextSnapshot.workEvents) {
+          handledWorkEventIds.current.add(workEvent.id);
+        }
+        const recentEvent = [...nextSnapshot.workEvents]
+          .reverse()
+          .find((workEvent) => ownedProductIds.has(workEvent.productId));
+        if (recentEvent) {
+          setLatestWorkEvent(recentEvent);
+        }
         setConnection('live');
         setError(null);
       })
@@ -73,6 +92,16 @@ export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountP
     const unsubscribe = subscribeRealtimeQuotes(
       (nextSnapshot) => {
         setSnapshot(nextSnapshot);
+        const ownedProductIds = new Set(
+          nextSnapshot.account.holdings.map((holding) => holding.productId),
+        );
+        for (const workEvent of nextSnapshot.workEvents) {
+          if (handledWorkEventIds.current.has(workEvent.id)) continue;
+          handledWorkEventIds.current.add(workEvent.id);
+          if (!ownedProductIds.has(workEvent.productId)) continue;
+          setLatestWorkEvent(workEvent);
+          onWorkEvent?.(workEvent);
+        }
         setError(null);
       },
       (connected) => setConnection(connected ? 'live' : 'stopped'),
@@ -82,7 +111,7 @@ export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountP
       controller.abort();
       unsubscribe();
     };
-  }, []);
+  }, [onWorkEvent]);
 
   const holdings = useMemo(() => snapshot?.account.holdings ?? [], [snapshot]);
   const visibleActorIds = useMemo(
@@ -189,13 +218,15 @@ export function VirtualAccountPanel({ onVisibleActorIdsChange }: VirtualAccountP
       </div>
 
       <div className="mirai-learning-note">
-        <span>学びのメモ</span>
+        <span>{latestWorkEvent?.headline ?? '学びのメモ'}</span>
         <p>
-          {connection === 'live'
-            ? '商品の値段は、会社や社会のさまざまな動きによって少しずつ変わります。'
-            : snapshot
-              ? 'いまは価格の更新を待っています。最後に受け取った金額を表示しています。'
-              : '仮想市場APIとの接続を待っています。積み立ては保護者用の仮想証券口座で行います。'}
+          {latestWorkEvent
+            ? latestWorkEvent.childMessage
+            : connection === 'live'
+              ? '商品の値段は、会社や社会のさまざまな動きによって少しずつ変わります。'
+              : snapshot
+                ? 'いまは価格の更新を待っています。最後に受け取った金額を表示しています。'
+                : '仮想市場APIとの接続を待っています。積み立ては保護者用の仮想証券口座で行います。'}
         </p>
       </div>
 

@@ -17,6 +17,17 @@ export interface SimulatedQuote {
   updatedAt: string;
 }
 
+export interface SimulatedWorkEvent {
+  id: string;
+  productId: string;
+  kind: 'progress' | 'challenge';
+  cue: 'music' | 'sweat';
+  headline: string;
+  childMessage: string;
+  tick: number;
+  createdAt: string;
+}
+
 export interface AccountHolding {
   productId: string;
   quantity: number;

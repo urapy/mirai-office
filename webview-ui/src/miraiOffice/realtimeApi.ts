@@ -17,6 +17,17 @@ export interface RealtimeHolding {
   profitLoss: number;
 }
 
+export interface RealtimeWorkEvent {
+  id: string;
+  productId: string;
+  kind: 'progress' | 'challenge';
+  cue: 'music' | 'sweat';
+  headline: string;
+  childMessage: string;
+  tick: number;
+  createdAt: string;
+}
+
 export interface RealtimeAccount {
   accountId: 'demo';
   principal: number;
@@ -29,6 +40,7 @@ export interface RealtimeAccount {
 export interface RealtimeSnapshot {
   quotes: RealtimeQuote[];
   account: RealtimeAccount;
+  workEvents: RealtimeWorkEvent[];
 }
 
 export const SIMULATION_API_BASE = import.meta.env.VITE_SIMULATION_API ?? 'http://127.0.0.1:4310';
@@ -44,11 +56,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function loadRealtimeSnapshot(signal?: AbortSignal): Promise<RealtimeSnapshot> {
-  const [quoteResponse, account] = await Promise.all([
+  const [quoteResponse, account, workEventResponse] = await Promise.all([
     request<{ quotes: RealtimeQuote[] }>('/api/quotes', { signal }),
     request<RealtimeAccount>('/api/accounts/demo', { signal }),
+    request<{ workEvents: RealtimeWorkEvent[] }>('/api/work-events?limit=20', { signal }),
   ]);
-  return { quotes: quoteResponse.quotes, account };
+  return {
+    quotes: quoteResponse.quotes,
+    account,
+    workEvents: workEventResponse.workEvents,
+  };
 }
 
 export function subscribeRealtimeQuotes(
@@ -57,7 +74,14 @@ export function subscribeRealtimeQuotes(
 ): () => void {
   const source = new EventSource(`${SIMULATION_API_BASE}/api/stream/quotes`);
   source.addEventListener('quotes', (event) => {
-    const snapshot = JSON.parse((event as MessageEvent<string>).data) as RealtimeSnapshot;
+    const payload = JSON.parse((event as MessageEvent<string>).data) as Omit<
+      RealtimeSnapshot,
+      'workEvents'
+    > & { workEvents?: RealtimeWorkEvent[] };
+    const snapshot: RealtimeSnapshot = {
+      ...payload,
+      workEvents: payload.workEvents ?? [],
+    };
     onSnapshot(snapshot);
     onConnectionChange(true);
   });

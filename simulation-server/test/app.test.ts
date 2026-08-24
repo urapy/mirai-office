@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'vitest';
 
 import { createSimulationApp } from '../src/app.js';
+import { MarketEngine } from '../src/marketEngine.js';
 
 test('serves products, quotes, and a demo account', async () => {
   const app = await createSimulationApp();
@@ -33,5 +34,19 @@ test('accepts a valid contribution and rejects invalid input', async () => {
   assert.equal(valid.statusCode, 200);
   assert.equal(valid.json().principal, 5_000);
   assert.equal(invalid.statusCode, 400);
+  await app.close();
+});
+
+test('serves simulated work events with their character cue', async () => {
+  const market = new MarketEngine();
+  market.advance('tick-1');
+  market.advance('tick-2');
+  market.advance('tick-3');
+  const app = await createSimulationApp(market);
+  const response = await app.inject({ method: 'GET', url: '/api/work-events?limit=1' });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().workEvents[0].productId, 'world-growth');
+  assert.equal(response.json().workEvents[0].cue, 'music');
   await app.close();
 });

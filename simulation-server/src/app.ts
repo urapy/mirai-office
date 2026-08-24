@@ -23,6 +23,10 @@ export async function createSimulationApp(
   app.get('/api/health', async () => ({ status: 'ok', service: 'mirai-simulation' }));
   app.get('/api/products', async () => ({ products: market.getProducts() }));
   app.get('/api/quotes', async () => ({ quotes: market.getQuotes() }));
+  app.get('/api/work-events', async (request) => {
+    const query = request.query as { limit?: string };
+    return { workEvents: market.getWorkEvents(Number(query.limit ?? 20)) };
+  });
   app.get('/api/quotes/history', async (request, reply) => {
     const query = request.query as { productId?: string; limit?: string };
     if (!query.productId) return reply.code(400).send({ error: 'productId is required' });
@@ -65,12 +69,16 @@ export async function createSimulationApp(
       Connection: 'keep-alive',
       ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin } : {}),
     });
-    const writeQuotes = (quotes: ReturnType<MarketEngine['getQuotes']>) => {
+    const writeQuotes = (
+      quotes: ReturnType<MarketEngine['getQuotes']>,
+      workEvents: ReturnType<MarketEngine['getWorkEvents']> = [],
+    ) => {
       reply.raw.write(
         `event: quotes\ndata: ${JSON.stringify({
           quotes,
           account: account.getSnapshot(),
           events: account.getHistory(),
+          workEvents,
         })}\n\n`,
       );
     };
