@@ -36,3 +36,16 @@ test('rejects invalid amounts and unknown products', () => {
   assert.throws(() => account.contribute('world-growth', 0));
   assert.throws(() => account.contribute('unknown', 10_000));
 });
+
+test('resets the accumulated contribution, holdings, and history', () => {
+  const account = new AccountService(new MarketEngine());
+  account.contribute('world-growth', 10_000);
+  account.contribute('daily-life', 5_000);
+
+  const snapshot = account.reset();
+
+  assert.equal(snapshot.principal, 0);
+  assert.equal(snapshot.valuation, 0);
+  assert.deepEqual(snapshot.holdings, []);
+  assert.deepEqual(account.getHistory(), []);
+});

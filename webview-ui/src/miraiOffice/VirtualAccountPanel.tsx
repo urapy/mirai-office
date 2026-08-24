@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { FICTIONAL_PRODUCTS } from './productCatalog.js';
+import { FICTIONAL_PRODUCTS, getProductActorIds } from './productCatalog.js';
 import {
   BROKERAGE_UI_URL,
   loadRealtimeSnapshot,
@@ -123,7 +123,7 @@ export function VirtualAccountPanel({
     () =>
       FICTIONAL_PRODUCTS.filter((product) =>
         holdings.some((holding) => holding.productId === product.id),
-      ).map((product) => product.actorId),
+      ).flatMap((product) => getProductActorIds(product.id)),
     [holdings],
   );
 

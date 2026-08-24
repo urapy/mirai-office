@@ -33,6 +33,7 @@ test('defines one distinct room for each fictional fund', () => {
       layout.furniture.some((item) => item.type.includes('PC_')),
       true,
     );
+    assert.equal(layout.furniture.filter((item) => item.type.includes('CHAIR')).length, 3);
     assert.equal(new Set(layout.furniture.map((item) => item.uid)).size, layout.furniture.length);
 
     floorTypes.add(layout.tiles[10 * layout.cols + 1]);
@@ -51,12 +52,15 @@ test('defines one distinct room for each fictional fund', () => {
 test('returns only the purchased actor assigned to the selected room', () => {
   const purchasedActorIds = [1001, 1003];
 
-  assert.deepEqual(getVisibleActorIdsForRoom('world-growth', purchasedActorIds), [1001]);
+  assert.deepEqual(
+    getVisibleActorIdsForRoom('world-growth', purchasedActorIds),
+    [1001, 1004, 1007],
+  );
   assert.deepEqual(getVisibleActorIdsForRoom('daily-life', purchasedActorIds), []);
-  assert.deepEqual(getVisibleActorIdsForRoom('future-tech', purchasedActorIds), [1003]);
+  assert.deepEqual(getVisibleActorIdsForRoom('future-tech', purchasedActorIds), [1003, 1006, 1009]);
 });
 
 test('rejects unknown fund rooms', () => {
-  assert.equal(getFundRoom('daily-life').name, 'くらしラウンジ');
+  assert.equal(getFundRoom('daily-life').name, 'ITクリエイティブスタジオ');
   assert.throws(() => getFundRoom('unknown-fund'));
 });

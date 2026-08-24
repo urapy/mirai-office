@@ -275,6 +275,27 @@ main {
   opacity: 0.45;
   cursor: not-allowed;
 }
+.reset-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  color: #fda4af;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #713044;
+  border-radius: 12px;
+}
+.reset-button:hover:not(:disabled) {
+  color: #fecdd3;
+  background: rgba(127, 29, 29, 0.2);
+  border-color: #be4560;
+}
+.reset-button:disabled,
+.text-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .disclaimer {
   color: #7790af;
   font-size: 11px;
@@ -318,6 +339,54 @@ td:first-child {
 }
 .text-button:hover {
   color: #fff;
+}
+.reset-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 8, 18, 0.78);
+  backdrop-filter: blur(10px);
+}
+.reset-dialog {
+  width: min(460px, 100%);
+  padding: 28px;
+  background: #0c1a2c;
+  border: 1px solid #713044;
+  border-radius: 20px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
+}
+.reset-dialog h2 {
+  margin: 0 0 12px;
+}
+.reset-dialog > p:not(.eyebrow) {
+  margin: 0;
+  color: #9eb1ca;
+  line-height: 1.7;
+}
+.reset-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+.danger-button {
+  padding: 11px 16px;
+  color: #fff1f2;
+  font-weight: 800;
+  cursor: pointer;
+  background: #be123c;
+  border: 0;
+  border-radius: 10px;
+}
+.danger-button:hover:not(:disabled) {
+  background: #e11d48;
+}
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 .event-list > div {
   display: grid;

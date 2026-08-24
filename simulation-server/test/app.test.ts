@@ -50,3 +50,21 @@ test('serves simulated work events with their character cue', async () => {
   assert.equal(response.json().workEvents[0].cue, 'music');
   await app.close();
 });
+
+test('resets the accumulated contribution through the account API', async () => {
+  const app = await createSimulationApp();
+  await app.inject({
+    method: 'POST',
+    url: '/api/accounts/demo/contributions',
+    payload: { productId: 'world-growth', amount: 30_000 },
+  });
+
+  const response = await app.inject({ method: 'POST', url: '/api/accounts/demo/reset' });
+  const history = await app.inject({ method: 'GET', url: '/api/accounts/demo/history' });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().principal, 0);
+  assert.deepEqual(response.json().holdings, []);
+  assert.deepEqual(history.json().events, []);
+  await app.close();
+});

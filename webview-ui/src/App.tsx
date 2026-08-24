@@ -20,7 +20,11 @@ import { useIntroTour } from './hooks/useIntroTour.js';
 import { getFundRoom, getVisibleActorIdsForRoom } from './miraiOffice/fundRooms.js';
 import { FundRoomSwitcher } from './miraiOffice/FundRoomSwitcher.js';
 import { syncOfficeActors } from './miraiOffice/officeActorSync.js';
-import { FICTIONAL_PRODUCTS, getFictionalProduct } from './miraiOffice/productCatalog.js';
+import {
+  FICTIONAL_PRODUCTS,
+  getProductActorIds,
+  getWorkEventActorId,
+} from './miraiOffice/productCatalog.js';
 import type { RealtimeWorkEvent } from './miraiOffice/realtimeApi.js';
 import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
@@ -118,16 +122,16 @@ function App() {
   const handleMiraiWorkEvent = useCallback(
     (event: RealtimeWorkEvent) => {
       if (event.productId !== activeRoomProductId) return;
-      const actorId = getFictionalProduct(event.productId).actorId;
+      const actorId = getWorkEventActorId(event.productId, event.tick);
       getOfficeState().showStoryCueBubble(actorId, event.cue);
     },
     [activeRoomProductId],
   );
   const ownedProductIds = useMemo(
     () =>
-      FICTIONAL_PRODUCTS.filter((product) => miraiVisibleActorIds.includes(product.actorId)).map(
-        (product) => product.id,
-      ),
+      FICTIONAL_PRODUCTS.filter((product) =>
+        getProductActorIds(product.id).some((actorId) => miraiVisibleActorIds.includes(actorId)),
+      ).map((product) => product.id),
     [miraiVisibleActorIds],
   );
   const activeRoomVisibleActorIds = useMemo(

@@ -3,20 +3,59 @@
   "actors": [
     {
       "id": 1001,
-      "label": "せかい成長ファンド",
+      "label": "にじいろ銀行",
       "palette": 0,
       "activity": "working"
     },
     {
       "id": 1002,
-      "label": "くらし安心ファンド",
+      "label": "わくわくアプリ社",
       "palette": 2,
       "activity": "working"
     },
     {
       "id": 1003,
-      "label": "みらい技術ファンド",
+      "label": "はこぶロボット工場",
       "palette": 4,
+      "activity": "working"
+    },
+    {
+      "id": 1004,
+      "label": "こつこつ保険",
+      "palette": 1,
+      "activity": "working"
+    },
+    {
+      "id": 1005,
+      "label": "まもるネット社",
+      "palette": 3,
+      "activity": "working"
+    },
+    {
+      "id": 1006,
+      "label": "みらい部品社",
+      "palette": 5,
+      "activity": "working"
+    },
+    {
+      "id": 1007,
+      "label": "まちの決済サービス",
+      "palette": 4,
+      "hueShift": 30,
+      "activity": "working"
+    },
+    {
+      "id": 1008,
+      "label": "つながるクラウド社",
+      "palette": 0,
+      "hueShift": 80,
+      "activity": "working"
+    },
+    {
+      "id": 1009,
+      "label": "エコエネルギー社",
+      "palette": 2,
+      "hueShift": 45,
       "activity": "working"
     }
   ]

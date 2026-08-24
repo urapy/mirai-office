@@ -22,6 +22,7 @@ export default function App() {
   const [connection, setConnection] = useState<'connecting' | 'live' | 'stopped'>('connecting');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
 
   useEffect(() => {
     void loadDashboard()
@@ -102,6 +103,7 @@ export default function App() {
     try {
       setAccount(await resetAccount());
       setEvents([]);
+      setIsResetOpen(false);
       setError(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
@@ -220,6 +222,13 @@ export default function App() {
             >
               {submitting ? '処理中…' : `${yen.format(amount)}を積み立てる`}
             </button>
+            <button
+              className="reset-button"
+              disabled={submitting || connection !== 'live' || (liveAccount?.principal ?? 0) === 0}
+              onClick={() => setIsResetOpen(true)}
+            >
+              積立額を0円にリセット
+            </button>
             <p className="disclaimer">
               学習用の架空商品です。実在する金融商品や将来の利益を示すものではありません。
             </p>
@@ -234,10 +243,10 @@ export default function App() {
             </div>
             <button
               className="text-button"
-              disabled={submitting || connection !== 'live'}
-              onClick={() => void handleReset()}
+              disabled={submitting || connection !== 'live' || (liveAccount?.principal ?? 0) === 0}
+              onClick={() => setIsResetOpen(true)}
             >
-              口座をリセット
+              積立記録をリセット
             </button>
           </div>
           <div className="table-wrap">
@@ -303,6 +312,39 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      {isResetOpen && (
+        <div className="reset-dialog-backdrop" role="presentation">
+          <section
+            className="reset-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-dialog-title"
+          >
+            <p className="eyebrow">RESET SIMULATION</p>
+            <h2 id="reset-dialog-title">積立額を0円に戻しますか？</h2>
+            <p>
+              投資した金額、保有商品、損益、これまでの積立履歴をすべて消して、最初の状態に戻します。
+            </p>
+            <div className="reset-dialog-actions">
+              <button
+                className="text-button"
+                disabled={submitting}
+                onClick={() => setIsResetOpen(false)}
+              >
+                キャンセル
+              </button>
+              <button
+                className="danger-button"
+                disabled={submitting}
+                onClick={() => void handleReset()}
+              >
+                {submitting ? 'リセット中…' : '0円にリセットする'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
