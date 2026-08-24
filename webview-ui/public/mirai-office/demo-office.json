@@ -57,6 +57,111 @@
       "palette": 2,
       "hueShift": 45,
       "activity": "working"
+    },
+    {
+      "id": 1101,
+      "label": "窓口のお客さま",
+      "palette": 3,
+      "hueShift": 25,
+      "activity": "working"
+    },
+    {
+      "id": 1102,
+      "label": "手続きのお客さま",
+      "palette": 5,
+      "hueShift": 70,
+      "activity": "working"
+    },
+    {
+      "id": 1103,
+      "label": "相談のお客さま",
+      "palette": 1,
+      "hueShift": 120,
+      "activity": "working"
+    },
+    {
+      "id": 1104,
+      "label": "融資相談の担当者",
+      "palette": 0,
+      "hueShift": 155,
+      "activity": "working"
+    },
+    {
+      "id": 1105,
+      "label": "融資相談のお客さま",
+      "palette": 4,
+      "hueShift": 210,
+      "activity": "working"
+    },
+    {
+      "id": 1201,
+      "label": "アプリ開発担当",
+      "palette": 1,
+      "hueShift": 35,
+      "activity": "working"
+    },
+    {
+      "id": 1202,
+      "label": "デザイン担当",
+      "palette": 3,
+      "hueShift": 75,
+      "activity": "working"
+    },
+    {
+      "id": 1203,
+      "label": "セキュリティ担当",
+      "palette": 5,
+      "hueShift": 115,
+      "activity": "working"
+    },
+    {
+      "id": 1204,
+      "label": "クラウド運用担当",
+      "palette": 2,
+      "hueShift": 170,
+      "activity": "working"
+    },
+    {
+      "id": 1205,
+      "label": "テスト担当",
+      "palette": 4,
+      "hueShift": 225,
+      "activity": "working"
+    },
+    {
+      "id": 1301,
+      "label": "機械操作担当",
+      "palette": 0,
+      "hueShift": 40,
+      "activity": "working"
+    },
+    {
+      "id": 1302,
+      "label": "組み立て担当",
+      "palette": 2,
+      "hueShift": 85,
+      "activity": "working"
+    },
+    {
+      "id": 1303,
+      "label": "品質確認担当",
+      "palette": 4,
+      "hueShift": 130,
+      "activity": "working"
+    },
+    {
+      "id": 1304,
+      "label": "部品運搬担当",
+      "palette": 1,
+      "hueShift": 180,
+      "activity": "working"
+    },
+    {
+      "id": 1305,
+      "label": "工程リーダー",
+      "palette": 3,
+      "hueShift": 235,
+      "activity": "working"
     }
   ]
 }

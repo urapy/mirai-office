@@ -146,8 +146,13 @@ function App() {
 
   useEffect(() => {
     if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
-    syncOfficeActors(getOfficeState(), officeActors, activeRoomVisibleActorIds);
-  }, [activeRoomVisibleActorIds, layoutReady, officeActors]);
+    syncOfficeActors(
+      getOfficeState(),
+      officeActors,
+      activeRoomVisibleActorIds,
+      getFundRoom(activeRoomProductId).actorSeatUids,
+    );
+  }, [activeRoomProductId, activeRoomVisibleActorIds, layoutReady, officeActors]);
 
   useEffect(() => {
     if (!isBrowserRuntime || !layoutReady || activeRoomVisibleActorIds.length === 0) return;

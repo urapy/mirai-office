@@ -15,6 +15,7 @@ export function syncOfficeActors(
   officeState: OfficeState,
   actors: readonly OfficeActor[],
   visibleActorIds: readonly number[],
+  preferredSeatUids: Readonly<Record<number, string>> = {},
 ): void {
   const visibleActors = selectVisibleOfficeActors(actors, visibleActorIds);
   const visibleIds = new Set(visibleActors.map((actor) => actor.id));
@@ -29,7 +30,7 @@ export function syncOfficeActors(
     }
 
     if (!existing) {
-      officeState.addAgent(actor.id, actor.palette, actor.hueShift);
+      officeState.addAgent(actor.id, actor.palette, actor.hueShift, preferredSeatUids[actor.id]);
       officeState.enterAgentFromEntrance(actor.id);
     } else if (existing.matrixEffect === 'despawn') {
       if (existing.seatId) {

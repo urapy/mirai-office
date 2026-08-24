@@ -62,6 +62,28 @@ test('adds, removes, and revives only the unlocked Mirai Office actors', () => {
   assert.equal(officeState.characters.size, 3);
 });
 
+test('places room actors at their role-specific seats', () => {
+  const officeState = new OfficeState();
+  const seatTiles = officeState.walkableTiles.slice(-2);
+  for (const [index, tile] of seatTiles.entries()) {
+    officeState.seats.set(`role-seat-${index + 1}`, {
+      uid: `role-seat-${index + 1}`,
+      seatCol: tile.col,
+      seatRow: tile.row,
+      facingDir: Direction.UP,
+      assigned: false,
+    });
+  }
+
+  syncOfficeActors(officeState, actors, [1, 2], {
+    1: 'role-seat-1',
+    2: 'role-seat-2',
+  });
+
+  assert.equal(officeState.characters.get(1)?.seatId, 'role-seat-1');
+  assert.equal(officeState.characters.get(2)?.seatId, 'role-seat-2');
+});
+
 test('sends a working product character on a short routine excursion', () => {
   const officeState = new OfficeState();
   officeState.addAgent(9, 0, 0, undefined, true);
