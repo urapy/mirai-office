@@ -18,6 +18,7 @@ MVP要件は2026-08-22に確定しました。現在は仮想口座・リアル�
 - [仮想口座・画面接続スパイク](virtual-account-spike.md)
 - [仮想証券口座・リアルタイム市場アーキテクチャ](realtime-brokerage-architecture.md)
 - [Firebaseデプロイ設計](firebase-deployment.md)
+- [iPhoneからのリモート確認](remote-preview.md)
 
 ## 現在地
 

@@ -31,7 +31,9 @@ allure-report/
 .env*
 !.env.example
 !brokerage-ui/.env.production.example
+!brokerage-ui/.env.remote
 !webview-ui/.env.production
+!webview-ui/.env.remote
 /functions/lib/
 
 # Project-specific

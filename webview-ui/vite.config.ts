@@ -121,6 +121,15 @@ function browserMockAssetsPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), browserMockAssetsPlugin()],
+  server: {
+    allowedHosts: ['mac-mini.tailac1e76.ts.net'],
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:4310',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: '../dist/webview',
     emptyOutDir: true,
