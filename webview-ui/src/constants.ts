@@ -195,7 +195,7 @@ export const WHATS_NEW_FADE_MS = 1000;
 // ── Game Logic ───────────────────────────────────────────────
 export const MAX_DELTA_TIME_SEC = 0.1;
 export const WAITING_BUBBLE_DURATION_SEC = 2.0;
-export const STORY_CUE_BUBBLE_DURATION_SEC = 3.0;
+export const STORY_CUE_BUBBLE_DURATION_SEC = 4.0;
 export const DISMISS_BUBBLE_FAST_FADE_SEC = 0.3;
 export const INACTIVE_SEAT_TIMER_MIN_SEC = 3.0;
 export const INACTIVE_SEAT_TIMER_RANGE_SEC = 2.0;

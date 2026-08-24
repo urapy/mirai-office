@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { test } from 'vitest';
 
 import type { OfficeActor } from '../src/miraiOffice/demoOffice.ts';
-import { selectVisibleOfficeActors, syncOfficeActors } from '../src/miraiOffice/officeActorSync.ts';
+import {
+  getMiraiWorkCue,
+  selectVisibleOfficeActors,
+  syncOfficeActors,
+} from '../src/miraiOffice/officeActorSync.ts';
 import { OfficeState } from '../src/office/engine/officeState.ts';
 import { Direction } from '../src/office/types.ts';
 
@@ -90,4 +94,12 @@ test('shows temporary story cues independently of profit and loss', () => {
 
   officeState.showStoryCueBubble(9, 'sweat');
   assert.equal(character.bubbleType, 'sweat');
+});
+
+test('rotates frequent work cues across visible product characters', () => {
+  assert.equal(getMiraiWorkCue([], 0), null);
+  assert.deepEqual(getMiraiWorkCue([1, 2, 3], 0), { actorId: 1, cue: 'music' });
+  assert.deepEqual(getMiraiWorkCue([1, 2, 3], 1), { actorId: 2, cue: 'sweat' });
+  assert.deepEqual(getMiraiWorkCue([1, 2, 3], 2), { actorId: 3, cue: 'music' });
+  assert.deepEqual(getMiraiWorkCue([1, 2, 3], 3), { actorId: 1, cue: 'music' });
 });

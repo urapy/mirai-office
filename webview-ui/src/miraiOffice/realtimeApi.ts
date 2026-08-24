@@ -32,6 +32,7 @@ export interface RealtimeSnapshot {
 }
 
 export const SIMULATION_API_BASE = import.meta.env.VITE_SIMULATION_API ?? 'http://127.0.0.1:4310';
+export const BROKERAGE_UI_URL = import.meta.env.VITE_BROKERAGE_UI ?? 'http://127.0.0.1:5174';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${SIMULATION_API_BASE}${path}`, {
@@ -48,17 +49,6 @@ export async function loadRealtimeSnapshot(signal?: AbortSignal): Promise<Realti
     request<RealtimeAccount>('/api/accounts/demo', { signal }),
   ]);
   return { quotes: quoteResponse.quotes, account };
-}
-
-export function contributeRealtime(productId: string, amount: number): Promise<RealtimeAccount> {
-  return request('/api/accounts/demo/contributions', {
-    method: 'POST',
-    body: JSON.stringify({ productId, amount }),
-  });
-}
-
-export function resetRealtimeAccount(): Promise<RealtimeAccount> {
-  return request('/api/accounts/demo/reset', { method: 'POST', body: '{}' });
 }
 
 export function subscribeRealtimeQuotes(
