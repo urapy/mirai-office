@@ -11,6 +11,7 @@ import {
 } from './realtimeApi.js';
 
 interface VirtualAccountPanelProps {
+  activeProductId: string;
   onVisibleActorIdsChange?: (actorIds: number[]) => void;
   onWorkEvent?: (event: RealtimeWorkEvent) => void;
 }
@@ -53,6 +54,7 @@ function HoldingRow({ holding }: { holding: RealtimeHolding }) {
 }
 
 export function VirtualAccountPanel({
+  activeProductId,
   onVisibleActorIdsChange,
   onWorkEvent,
 }: VirtualAccountPanelProps) {
@@ -64,6 +66,7 @@ export function VirtualAccountPanel({
   const handledWorkEventIds = useRef(new Set<string>());
 
   useEffect(() => {
+    setLatestWorkEvent(null);
     const controller = new AbortController();
     void loadRealtimeSnapshot(controller.signal)
       .then((nextSnapshot) => {
@@ -76,10 +79,11 @@ export function VirtualAccountPanel({
         }
         const recentEvent = [...nextSnapshot.workEvents]
           .reverse()
-          .find((workEvent) => ownedProductIds.has(workEvent.productId));
-        if (recentEvent) {
-          setLatestWorkEvent(recentEvent);
-        }
+          .find(
+            (workEvent) =>
+              workEvent.productId === activeProductId && ownedProductIds.has(workEvent.productId),
+          );
+        setLatestWorkEvent(recentEvent ?? null);
         setConnection('live');
         setError(null);
       })
@@ -99,6 +103,7 @@ export function VirtualAccountPanel({
           if (handledWorkEventIds.current.has(workEvent.id)) continue;
           handledWorkEventIds.current.add(workEvent.id);
           if (!ownedProductIds.has(workEvent.productId)) continue;
+          if (workEvent.productId !== activeProductId) continue;
           setLatestWorkEvent(workEvent);
           onWorkEvent?.(workEvent);
         }
@@ -111,7 +116,7 @@ export function VirtualAccountPanel({
       controller.abort();
       unsubscribe();
     };
-  }, [onWorkEvent]);
+  }, [activeProductId, onWorkEvent]);
 
   const holdings = useMemo(() => snapshot?.account.holdings ?? [], [snapshot]);
   const visibleActorIds = useMemo(

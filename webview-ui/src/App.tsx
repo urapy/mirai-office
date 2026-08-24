@@ -17,8 +17,10 @@ import { useEditorActions } from './hooks/useEditorActions.js';
 import { useEditorKeyboard } from './hooks/useEditorKeyboard.js';
 import { useExtensionMessages } from './hooks/useExtensionMessages.js';
 import { useIntroTour } from './hooks/useIntroTour.js';
+import { getFundRoom, getVisibleActorIdsForRoom } from './miraiOffice/fundRooms.js';
+import { FundRoomSwitcher } from './miraiOffice/FundRoomSwitcher.js';
 import { syncOfficeActors } from './miraiOffice/officeActorSync.js';
-import { getFictionalProduct } from './miraiOffice/productCatalog.js';
+import { FICTIONAL_PRODUCTS, getFictionalProduct } from './miraiOffice/productCatalog.js';
 import type { RealtimeWorkEvent } from './miraiOffice/realtimeApi.js';
 import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
@@ -104,6 +106,7 @@ function App() {
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
 
   const [miraiVisibleActorIds, setMiraiVisibleActorIds] = useState<number[]>([]);
+  const [activeRoomProductId, setActiveRoomProductId] = useState('world-growth');
   const handleMiraiVisibleActorIdsChange = useCallback((actorIds: number[]) => {
     setMiraiVisibleActorIds((current) => {
       const isUnchanged =
@@ -112,17 +115,38 @@ function App() {
       return isUnchanged ? current : actorIds;
     });
   }, []);
-  const handleMiraiWorkEvent = useCallback((event: RealtimeWorkEvent) => {
-    const actorId = getFictionalProduct(event.productId).actorId;
-    getOfficeState().showStoryCueBubble(actorId, event.cue);
-  }, []);
-  useEffect(() => {
-    if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
-    syncOfficeActors(getOfficeState(), officeActors, miraiVisibleActorIds);
-  }, [layoutReady, miraiVisibleActorIds, officeActors]);
+  const handleMiraiWorkEvent = useCallback(
+    (event: RealtimeWorkEvent) => {
+      if (event.productId !== activeRoomProductId) return;
+      const actorId = getFictionalProduct(event.productId).actorId;
+      getOfficeState().showStoryCueBubble(actorId, event.cue);
+    },
+    [activeRoomProductId],
+  );
+  const ownedProductIds = useMemo(
+    () =>
+      FICTIONAL_PRODUCTS.filter((product) => miraiVisibleActorIds.includes(product.actorId)).map(
+        (product) => product.id,
+      ),
+    [miraiVisibleActorIds],
+  );
+  const activeRoomVisibleActorIds = useMemo(
+    () => getVisibleActorIdsForRoom(activeRoomProductId, miraiVisibleActorIds),
+    [activeRoomProductId, miraiVisibleActorIds],
+  );
 
   useEffect(() => {
-    if (!isBrowserRuntime || !layoutReady || miraiVisibleActorIds.length === 0) return;
+    if (!isBrowserRuntime || !layoutReady) return;
+    getOfficeState().rebuildFromLayout(getFundRoom(activeRoomProductId).layout);
+  }, [activeRoomProductId, layoutReady]);
+
+  useEffect(() => {
+    if (!isBrowserRuntime || !layoutReady || officeActors.length === 0) return;
+    syncOfficeActors(getOfficeState(), officeActors, activeRoomVisibleActorIds);
+  }, [activeRoomVisibleActorIds, layoutReady, officeActors]);
+
+  useEffect(() => {
+    if (!isBrowserRuntime || !layoutReady || activeRoomVisibleActorIds.length === 0) return;
     const officeState = getOfficeState();
     const returnTimers = new Set<number>();
     let nextActorIndex = 0;
@@ -131,7 +155,8 @@ function App() {
     const scheduleRoutine = () => {
       routineTimer = window.setTimeout(
         () => {
-          const actorId = miraiVisibleActorIds[nextActorIndex % miraiVisibleActorIds.length];
+          const actorId =
+            activeRoomVisibleActorIds[nextActorIndex % activeRoomVisibleActorIds.length];
           nextActorIndex++;
           if (officeState.startRoutineExcursion(actorId)) {
             const returnTimer = window.setTimeout(() => {
@@ -150,9 +175,9 @@ function App() {
     return () => {
       window.clearTimeout(routineTimer);
       for (const timer of returnTimers) window.clearTimeout(timer);
-      for (const actorId of miraiVisibleActorIds) officeState.setAgentActive(actorId, true);
+      for (const actorId of activeRoomVisibleActorIds) officeState.setAgentActive(actorId, true);
     };
-  }, [layoutReady, miraiVisibleActorIds]);
+  }, [activeRoomVisibleActorIds, layoutReady]);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
@@ -586,10 +611,18 @@ function App() {
       <ConnectionIndicator />
 
       {isBrowserRuntime && (
-        <VirtualAccountPanel
-          onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange}
-          onWorkEvent={handleMiraiWorkEvent}
-        />
+        <>
+          <FundRoomSwitcher
+            activeProductId={activeRoomProductId}
+            ownedProductIds={ownedProductIds}
+            onRoomChange={setActiveRoomProductId}
+          />
+          <VirtualAccountPanel
+            activeProductId={activeRoomProductId}
+            onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange}
+            onWorkEvent={handleMiraiWorkEvent}
+          />
+        </>
       )}
 
       <ChangelogModal

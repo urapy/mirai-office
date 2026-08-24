@@ -617,6 +617,172 @@
   background: rgba(20, 29, 50, 0.96);
 }
 
+.mirai-room-nav {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 30;
+  display: flex;
+  width: min(470px, calc(100vw - 408px));
+  min-width: 390px;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  color: #f7f9ff;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(109, 167, 255, 0.13), transparent 42%),
+    rgba(8, 14, 28, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 17px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(16px);
+}
+
+.mirai-room-nav * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.mirai-room-nav-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 2px;
+}
+
+.mirai-room-nav-heading > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mirai-room-nav-heading span {
+  color: #77849a;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+}
+
+.mirai-room-nav-heading strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mirai-room-nav-heading small {
+  max-width: 210px;
+  color: #8995ab;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.mirai-room-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mirai-room-tab {
+  --room-accent: #8b7cff;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 7px;
+  align-items: center;
+  min-width: 0;
+  padding: 9px 10px;
+  color: #9aa7ba;
+  text-align: left;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 11px;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.mirai-room-tab--world-growth {
+  --room-accent: #6da7ff;
+}
+
+.mirai-room-tab--daily-life {
+  --room-accent: #66d39a;
+}
+
+.mirai-room-tab--future-tech {
+  --room-accent: #a78bfa;
+}
+
+.mirai-room-tab:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-1px);
+}
+
+.mirai-room-tab.is-active {
+  color: white;
+  background: color-mix(in srgb, var(--room-accent) 13%, rgba(255, 255, 255, 0.04));
+  border-color: color-mix(in srgb, var(--room-accent) 52%, transparent);
+  box-shadow: inset 0 -2px 0 var(--room-accent);
+}
+
+.mirai-room-tab-dot {
+  grid-row: 1 / span 2;
+  width: 7px;
+  height: 7px;
+  background: var(--room-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--room-accent) 14%, transparent);
+}
+
+.mirai-room-tab > span:nth-child(2) {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mirai-room-tab small {
+  color: #6f7c91;
+  font-size: 9px;
+}
+
+.mirai-room-tab.is-active small {
+  color: color-mix(in srgb, var(--room-accent) 76%, white);
+}
+
+.mirai-room-tab:focus-visible {
+  outline: 2px solid var(--room-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+  .mirai-room-nav {
+    right: 12px;
+    width: auto;
+    min-width: 0;
+  }
+
+  .mirai-dashboard {
+    top: 152px;
+  }
+}
+
 @keyframes mirai-live-pulse {
   0%,
   100% {
