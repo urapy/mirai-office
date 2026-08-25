@@ -4,6 +4,7 @@ export interface SimulatedProduct {
   shortName: string;
   description: string;
   theme: string;
+  officeRoomName: string;
   initialPrice: number;
 }
 

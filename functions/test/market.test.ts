@@ -2,7 +2,19 @@ import assert from 'node:assert/strict';
 
 import { test } from 'vitest';
 
-import { getCloudHistory, getCloudQuote, getCloudWorkEvents } from '../src/market.js';
+import {
+  CLOUD_PRODUCTS,
+  getCloudHistory,
+  getCloudQuote,
+  getCloudWorkEvents,
+} from '../src/market.js';
+
+test('keeps the cloud fund and office-room mapping in the product API', () => {
+  assert.deepEqual(
+    CLOUD_PRODUCTS.map((product) => product.officeRoomName),
+    ['銀行サービスフロア', 'ITクリエイティブスタジオ', 'ものづくり工場'],
+  );
+});
 
 test('produces deterministic one-second quotes without an in-memory timer', () => {
   const now = Date.UTC(2026, 7, 24, 1, 0, 0);

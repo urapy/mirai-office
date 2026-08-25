@@ -2,7 +2,18 @@ import assert from 'node:assert/strict';
 
 import { test } from 'vitest';
 
-import { MarketEngine } from '../src/marketEngine.js';
+import { MarketEngine, SIMULATED_PRODUCTS } from '../src/marketEngine.js';
+
+test('links every fund to its Mirai Office room name', () => {
+  assert.deepEqual(
+    SIMULATED_PRODUCTS.map((product) => [product.name, product.officeRoomName]),
+    [
+      ['おかねを支える金融ファンド', '銀行サービスフロア'],
+      ['くらしを便利にするITファンド', 'ITクリエイティブスタジオ'],
+      ['ものづくり産業ファンド', 'ものづくり工場'],
+    ],
+  );
+});
 
 test('generates the same quote sequence from the same seed', () => {
   const first = new MarketEngine(42);

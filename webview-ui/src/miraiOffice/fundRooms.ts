@@ -1,6 +1,6 @@
 import type { ColorValue } from '../components/ui/types.js';
 import { type OfficeLayout, type PlacedFurniture, TileType } from '../office/types.js';
-import { getProductActorIds } from './productCatalog.js';
+import { getFictionalProduct, getProductActorIds } from './productCatalog.js';
 
 export interface FundRoomDefinition {
   productId: string;
@@ -150,7 +150,7 @@ const INDUSTRY_ROOM_FURNITURE = furniture('industry', [
 export const FUND_ROOMS: readonly FundRoomDefinition[] = [
   {
     productId: 'world-growth',
-    name: '金融サービスフロア',
+    name: getFictionalProduct('world-growth').officeRoomName,
     shortName: '金融',
     concept: 'お客さまを迎える銀行窓口と、社員の執務・融資相談が見えるフロア',
     actorSeatUids: {
@@ -171,7 +171,7 @@ export const FUND_ROOMS: readonly FundRoomDefinition[] = [
   },
   {
     productId: 'daily-life',
-    name: 'ITクリエイティブスタジオ',
+    name: getFictionalProduct('daily-life').officeRoomName,
     shortName: 'IT',
     concept: 'たくさんのコンピュータに向かい、開発チームがもくもくと働くフロア',
     actorSeatUids: Object.fromEntries(
@@ -188,7 +188,7 @@ export const FUND_ROOMS: readonly FundRoomDefinition[] = [
   },
   {
     productId: 'future-tech',
-    name: 'ものづくり工場',
+    name: getFictionalProduct('future-tech').officeRoomName,
     shortName: '産業',
     concept: '機械と作業台を囲み、たくさんの社員が工程をつないでものをつくる工場',
     actorSeatUids: Object.fromEntries(

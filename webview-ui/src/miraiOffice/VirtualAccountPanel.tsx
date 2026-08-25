@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { getFundRoom } from './fundRooms.js';
 import { FICTIONAL_PRODUCTS, getProductActorIds } from './productCatalog.js';
 import {
   BROKERAGE_UI_URL,
@@ -34,6 +35,7 @@ function getProduct(productId: string) {
 
 function HoldingRow({ holding }: { holding: RealtimeHolding }) {
   const product = getProduct(holding.productId);
+  const room = getFundRoom(holding.productId);
   const isPositive = holding.profitLoss >= 0;
 
   return (
@@ -41,7 +43,9 @@ function HoldingRow({ holding }: { holding: RealtimeHolding }) {
       <span className={`mirai-product-mark mirai-product-mark--${holding.productId}`} />
       <div className="mirai-holding-name">
         <strong>{product?.name ?? holding.productId}</strong>
-        <span>{holding.quantity.toFixed(4)}口</span>
+        <span>
+          {room.name}で活動中 · {holding.quantity.toFixed(4)}口
+        </span>
       </div>
       <div className="mirai-holding-value">
         <strong>{formatYen(holding.valuation)}</strong>
@@ -58,7 +62,9 @@ export function VirtualAccountPanel({
   onVisibleActorIdsChange,
   onWorkEvent,
 }: VirtualAccountPanelProps) {
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [isPanelOpen, setIsPanelOpen] = useState(
+    () => typeof window === 'undefined' || !window.matchMedia('(max-width: 600px)').matches,
+  );
   const [snapshot, setSnapshot] = useState<RealtimeSnapshot | null>(null);
   const [connection, setConnection] = useState<'connecting' | 'live' | 'stopped'>('connecting');
   const [error, setError] = useState<string | null>(null);

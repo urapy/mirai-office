@@ -193,6 +193,7 @@ export default function App() {
               >
                 <span className="theme">{product.theme}</span>
                 <strong>{product.name}</strong>
+                <span className="office-room-link">みらいオフィス：{product.officeRoomName}</span>
                 <span className="price">{quote ? yen.format(quote.price) : '—'}</span>
                 <span className={`change ${(quote?.change ?? 0) >= 0 ? 'positive' : 'negative'}`}>
                   {quote
@@ -210,6 +211,11 @@ export default function App() {
               <div>
                 <p className="eyebrow">リアルタイム価格</p>
                 <h2>{selectedProduct?.name ?? '商品を選択'}</h2>
+                {selectedProduct && (
+                  <span className="selected-office-room">
+                    対応する部屋：{selectedProduct.officeRoomName}
+                  </span>
+                )}
               </div>
               <strong>{selectedQuote ? yen.format(selectedQuote.price) : '—'}</strong>
             </div>
@@ -304,12 +310,17 @@ export default function App() {
                 {liveAccount?.holdings.length ? (
                   liveAccount.holdings.map((holding) => (
                     <tr key={holding.productId}>
-                      <td>{products.find((product) => product.id === holding.productId)?.name}</td>
-                      <td>{number.format(holding.quantity)}口</td>
-                      <td>{yen.format(holding.averageCost)}</td>
-                      <td>{yen.format(holding.currentPrice)}</td>
-                      <td>{yen.format(holding.valuation)}</td>
-                      <td className={holding.profitLoss >= 0 ? 'positive' : 'negative'}>
+                      <td data-label="商品">
+                        {products.find((product) => product.id === holding.productId)?.name}
+                      </td>
+                      <td data-label="保有数量">{number.format(holding.quantity)}口</td>
+                      <td data-label="平均取得価格">{yen.format(holding.averageCost)}</td>
+                      <td data-label="現在価格">{yen.format(holding.currentPrice)}</td>
+                      <td data-label="評価額">{yen.format(holding.valuation)}</td>
+                      <td
+                        data-label="損益"
+                        className={holding.profitLoss >= 0 ? 'positive' : 'negative'}
+                      >
                         {signedYen(holding.profitLoss)}
                       </td>
                     </tr>

@@ -758,8 +758,11 @@
 }
 
 .mirai-room-tab small {
+  overflow: hidden;
   color: #6f7c91;
   font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mirai-room-tab.is-active small {
@@ -780,6 +783,113 @@
 
   .mirai-dashboard {
     top: 152px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mirai-room-nav {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .mirai-room-nav-heading {
+    align-items: flex-start;
+  }
+
+  .mirai-room-nav-heading span {
+    max-width: calc(100vw - 48px);
+    overflow: hidden;
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mirai-room-nav-heading strong {
+    font-size: 14px;
+  }
+
+  .mirai-room-nav-heading > small {
+    display: none;
+  }
+
+  .mirai-room-tabs {
+    display: flex;
+    gap: 6px;
+    margin-right: -2px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .mirai-room-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mirai-room-tab {
+    min-width: 132px;
+    min-height: 48px;
+    flex: 1 0 132px;
+    padding: 8px 9px;
+    scroll-snap-align: start;
+  }
+
+  .mirai-room-tab > span:nth-child(2) {
+    font-size: 11px;
+  }
+
+  .mirai-panel-launcher {
+    top: 126px;
+    right: 8px;
+    min-height: 44px;
+  }
+
+  .mirai-dashboard {
+    top: 126px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100vh - 134px);
+    gap: 14px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .mirai-close-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mirai-live-status {
+    display: none;
+  }
+
+  .mirai-balance-block > strong {
+    font-size: 30px;
+  }
+
+  .mirai-holding-row {
+    align-items: flex-start;
+  }
+
+  .mirai-holding-name strong,
+  .mirai-holding-value strong {
+    white-space: normal;
+  }
+
+  .mirai-dashboard-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mirai-dashboard-footer a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
   }
 }
 

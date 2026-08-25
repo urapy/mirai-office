@@ -4,6 +4,7 @@ export interface CloudProduct {
   shortName: string;
   description: string;
   theme: string;
+  officeRoomName: string;
   initialPrice: number;
 }
 
@@ -35,6 +36,7 @@ export const CLOUD_PRODUCTS: readonly CloudProduct[] = [
     shortName: '金融ファンド',
     description: '銀行、保険、支払いのしくみで、みんなのお金を支える架空の商品',
     theme: '金融',
+    officeRoomName: '銀行サービスフロア',
     initialPrice: 10_000,
   },
   {
@@ -43,6 +45,7 @@ export const CLOUD_PRODUCTS: readonly CloudProduct[] = [
     shortName: 'ITファンド',
     description: 'アプリやインターネットの技術で、毎日のくらしを便利にする架空の商品',
     theme: 'IT',
+    officeRoomName: 'ITクリエイティブスタジオ',
     initialPrice: 10_000,
   },
   {
@@ -51,6 +54,7 @@ export const CLOUD_PRODUCTS: readonly CloudProduct[] = [
     shortName: '産業ファンド',
     description: '工場、部品、エネルギーの仕事で、社会に必要なものをつくる架空の商品',
     theme: '産業',
+    officeRoomName: 'ものづくり工場',
     initialPrice: 10_000,
   },
 ];

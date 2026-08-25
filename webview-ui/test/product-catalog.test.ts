@@ -21,6 +21,10 @@ test('groups three child-friendly fictional companies into each sector fund', ()
   const companies = FICTIONAL_PRODUCTS.flatMap((product) => product.companies);
   assert.equal(new Set(companies.map((company) => company.actorId)).size, 9);
   assert.equal(new Set(companies.map((company) => company.name)).size, 9);
+  assert.deepEqual(
+    FICTIONAL_PRODUCTS.map((product) => product.officeRoomName),
+    ['銀行サービスフロア', 'ITクリエイティブスタジオ', 'ものづくり工場'],
+  );
 });
 
 test('assigns work events across the companies in a fund', () => {

@@ -4,6 +4,7 @@ export interface FictionalProduct {
   shortName: string;
   sector: string;
   description: string;
+  officeRoomName: string;
   companies: readonly FictionalCompany[];
 }
 
@@ -19,6 +20,7 @@ export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
     shortName: '金融ファンド',
     sector: '金融',
     description: '銀行、保険、支払いのしくみで、みんなのお金を支える架空の商品',
+    officeRoomName: '銀行サービスフロア',
     companies: [
       { actorId: 1001, name: 'にじいろ銀行' },
       { actorId: 1004, name: 'こつこつ保険' },
@@ -31,6 +33,7 @@ export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
     shortName: 'ITファンド',
     sector: 'IT',
     description: 'アプリやインターネットの技術で、毎日のくらしを便利にする架空の商品',
+    officeRoomName: 'ITクリエイティブスタジオ',
     companies: [
       { actorId: 1002, name: 'わくわくアプリ社' },
       { actorId: 1005, name: 'まもるネット社' },
@@ -43,6 +46,7 @@ export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
     shortName: '産業ファンド',
     sector: '産業',
     description: '工場、部品、エネルギーの仕事で、社会に必要なものをつくる架空の商品',
+    officeRoomName: 'ものづくり工場',
     companies: [
       { actorId: 1003, name: 'はこぶロボット工場' },
       { actorId: 1006, name: 'みらい部品社' },

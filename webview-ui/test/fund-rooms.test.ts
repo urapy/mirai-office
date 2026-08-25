@@ -7,6 +7,7 @@ import {
   getFundRoom,
   getVisibleActorIdsForRoom,
 } from '../src/miraiOffice/fundRooms.ts';
+import { getFictionalProduct } from '../src/miraiOffice/productCatalog.ts';
 import { TileType } from '../src/office/types.ts';
 
 test('defines one distinct room for each fictional fund', () => {
@@ -19,6 +20,7 @@ test('defines one distinct room for each fictional fund', () => {
   const floorTypes = new Set<TileType>();
 
   for (const room of FUND_ROOMS) {
+    assert.equal(room.name, getFictionalProduct(room.productId).officeRoomName);
     const { layout } = room;
     assert.equal(layout.cols, 21);
     assert.equal(layout.rows, 22);
