@@ -12,18 +12,19 @@ mirai-office/
 └── webview-ui/            # Pixel Agents由来の画面実装
 ```
 
-企画文書とアプリコードを単一リポジトリで管理する。公式リポジトリを `upstream`、自分のGitHubフォーク `urapy/pixel-agents` を `origin` とする。
+企画文書とアプリコードを、みらいオフィス専用の単一Gitリポジトリで管理する。みらいオフィスのGitHubリポジトリを `origin`、Pixel Agents公式リポジトリを `upstream`、Pixel Agentsフォークを `pixel-agents-fork` とする。
 
 ## 進め方
 
 ### 0. フォーク基盤を用意する
 
-- ローカル配置: `/Users/taka-m2/Documents/Codex/mirai-office`
+- ローカル配置: 任意の作業ディレクトリにクローンしたリポジトリルート
 - 上流リモート: `upstream`
+- みらいオフィスのリモート: `origin`
+- Pixel Agentsフォーク: `pixel-agents-fork`
 - 開発ブランチ: `codex/mirai-office-mvp`
-- GitHub上のフォーク `https://github.com/urapy/pixel-agents` を `origin` として設定済み
 
-完了条件: `upstream/main` の更新を取り込め、みらいオフィスの変更を別ブランチで管理できる。
+完了条件: `upstream/main` の更新を取り込め、みらいオフィスの変更を専用リポジトリと開発ブランチで管理できる。
 
 状態: 完了
 

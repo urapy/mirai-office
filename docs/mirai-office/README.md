@@ -30,4 +30,4 @@ Canvas描画、キャラクター状態機械、経路探索を移植し、保�
 
 実在企業を扱う独立した試験機能として、NVIDIA公式Newsroomの最新発表を分類し、子ども向けに説明するAIコンピューティングラボを追加しています。NVIDIAは仮想商品の購入対象にせず、株価予測や売買推奨も行いません。外部の証券会社APIや実口座との接続は、初期MVPの対象外です。
 
-企画文書とPixel Agents由来のコードは、`/Users/taka-m2/Documents/Codex/mirai-office` の単一Gitリポジトリで管理する。公式リポジトリは `upstream`、GitHub上のフォーク `urapy/pixel-agents` は `origin` とし、みらいオフィスの変更は `codex/mirai-office-mvp` ブランチで進める。
+企画文書とPixel Agents由来のコードは、みらいオフィス専用の単一Gitリポジトリで管理します。みらいオフィスのGitHubリポジトリを `origin`、Pixel Agents公式リポジトリを `upstream`、GitHub上のPixel Agentsフォークを `pixel-agents-fork` とし、開発変更は `codex/mirai-office-mvp` ブランチで進めます。
