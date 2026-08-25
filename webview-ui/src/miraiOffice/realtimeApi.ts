@@ -44,6 +44,27 @@ export interface RealtimePerformanceState {
   expiresAt: string | null;
 }
 
+export interface CompanyWatchReport {
+  companyId: 'nvidia';
+  companyName: 'NVIDIA';
+  roomProductId: 'nvidia-watch';
+  sourceType: 'official-press-release';
+  sourceName: string;
+  sourceUrl: string;
+  sourcePublishedAt: string;
+  sourceHeadline: string;
+  category: 'ai-product' | 'infrastructure' | 'partnership' | 'financial' | 'other';
+  activityLabel: string;
+  reactionLevel: 1 | 2 | 3;
+  cue: 'music';
+  whatHappened: string;
+  childMeaning: string;
+  whatToWatch: string;
+  generatedAt: string;
+  status: 'live' | 'fallback';
+  notice: string;
+}
+
 export interface RealtimeAccount {
   accountId: 'demo';
   principal: number;
@@ -85,6 +106,10 @@ export async function loadRealtimeSnapshot(signal?: AbortSignal): Promise<Realti
     workEvents: workEventResponse.workEvents,
     performanceStates: performanceResponse.performanceStates,
   };
+}
+
+export async function loadNvidiaWatchReport(signal?: AbortSignal): Promise<CompanyWatchReport> {
+  return request<CompanyWatchReport>('/api/company-watch/nvidia', { signal });
 }
 
 export function subscribeRealtimeQuotes(

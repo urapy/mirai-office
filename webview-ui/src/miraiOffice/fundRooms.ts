@@ -147,6 +147,44 @@ const INDUSTRY_ROOM_FURNITURE = furniture('industry', [
   { type: 'BIN', col: 18, row: 19 },
 ]);
 
+const NVIDIA_ROOM_FURNITURE = furniture('nvidia', [
+  { type: 'WHITEBOARD', col: 1, row: 9 },
+  { type: 'CLOCK', col: 17, row: 9 },
+  { type: 'DOUBLE_BOOKSHELF', col: 7, row: 9, color: { h: 104, s: 52, b: -30, c: 12 } },
+  { type: 'DOUBLE_BOOKSHELF', col: 12, row: 9, color: { h: 104, s: 52, b: -30, c: 12 } },
+  ...[1, 5, 9, 13].flatMap((col, index) => [
+    {
+      type: 'DESK_FRONT',
+      col,
+      row: 11,
+      color: { h: 104, s: 38, b: -24, c: 18 },
+    } as RoomFurniture,
+    { type: `PC_FRONT_ON_${(index % 3) + 1}`, col: col + 1, row: 11 } as RoomFurniture,
+    {
+      type: 'CUSHIONED_CHAIR_BACK',
+      col: col + 1,
+      row: 13,
+      uid: `nvidia-lab-${index + 1}`,
+    } as RoomFurniture,
+  ]),
+  ...[1, 5, 9, 13].flatMap((col, index) => [
+    {
+      type: 'TABLE_FRONT',
+      col,
+      row: 16,
+      color: { h: 104, s: 42, b: -30, c: 16 },
+    } as RoomFurniture,
+    { type: `PC_FRONT_ON_${((index + 1) % 3) + 1}`, col: col + 1, row: 16 } as RoomFurniture,
+    {
+      type: 'CUSHIONED_CHAIR_BACK',
+      col: col + 1,
+      row: 18,
+      uid: `nvidia-lab-${index + 5}`,
+    } as RoomFurniture,
+  ]),
+  { type: 'CACTUS', col: 18, row: 18, color: { h: 104, s: 54, b: 2, c: 10 } },
+]);
+
 export const FUND_ROOMS: readonly FundRoomDefinition[] = [
   {
     productId: 'world-growth',
@@ -203,6 +241,23 @@ export const FUND_ROOMS: readonly FundRoomDefinition[] = [
       INDUSTRY_ROOM_FURNITURE,
     ),
   },
+  {
+    productId: 'nvidia-watch',
+    name: getFictionalProduct('nvidia-watch').officeRoomName,
+    shortName: 'AI基盤',
+    concept: 'AIを動かす半導体、サーバー、ネットワーク、ソフトウェアを研究する実在企業ウォッチ',
+    actorSeatUids: Object.fromEntries(
+      [1401, 1402, 1403, 1404, 1405, 1406, 1407, 1408].map((actorId, index) => [
+        actorId,
+        `nvidia-lab-${index + 1}`,
+      ]),
+    ),
+    layout: createRoomLayout(
+      TileType.FLOOR_6,
+      { h: 112, s: 36, b: -38, c: -18 },
+      NVIDIA_ROOM_FURNITURE,
+    ),
+  },
 ] as const;
 
 export function getFundRoom(productId: string): FundRoomDefinition {
@@ -215,7 +270,9 @@ export function getVisibleActorIdsForRoom(
   productId: string,
   purchasedActorIds: readonly number[],
 ): number[] {
+  const product = getFictionalProduct(productId);
   const productActorIds = getProductActorIds(productId);
   const roomActorIds = Object.keys(getFundRoom(productId).actorSeatUids).map(Number);
+  if (product.kind === 'company-watch') return roomActorIds;
   return productActorIds.some((actorId) => purchasedActorIds.includes(actorId)) ? roomActorIds : [];
 }

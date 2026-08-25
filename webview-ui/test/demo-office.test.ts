@@ -35,7 +35,7 @@ test('rejects duplicate actor IDs', () => {
   );
 });
 
-test('provides every company, employee, and customer used by the three rooms', () => {
+test('provides every company, employee, and customer used by all rooms', () => {
   const snapshot = parseOfficeActorSnapshot(
     JSON.parse(
       readFileSync(new URL('../public/mirai-office/demo-office.json', import.meta.url), 'utf8'),
@@ -44,8 +44,8 @@ test('provides every company, employee, and customer used by the three rooms', (
   const snapshotIds = new Set(snapshot.actors.map((actor) => actor.id));
   const roomActorIds = FUND_ROOMS.flatMap((room) => Object.keys(room.actorSeatUids).map(Number));
 
-  assert.equal(snapshot.actors.length, 24);
-  assert.equal(new Set(roomActorIds).size, 24);
+  assert.equal(snapshot.actors.length, 32);
+  assert.equal(new Set(roomActorIds).size, 32);
   assert.equal(
     roomActorIds.every((actorId) => snapshotIds.has(actorId)),
     true,

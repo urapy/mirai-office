@@ -11,6 +11,7 @@ import {
   resetAccount,
   triggerPerformanceEvent,
 } from './account.js';
+import { getCloudNvidiaWatchReport } from './companyWatch.js';
 import { CLOUD_PRODUCTS, getCloudHistory, getCloudQuotes, getCloudWorkEvents } from './market.js';
 
 if (getApps().length === 0) initializeApp();
@@ -47,6 +48,10 @@ export const api = onRequest(
       }
       if (request.method === 'GET' && path === '/products') {
         response.json({ products: CLOUD_PRODUCTS });
+        return;
+      }
+      if (request.method === 'GET' && path === '/company-watch/nvidia') {
+        response.json(await getCloudNvidiaWatchReport(new Date(nowMs)));
         return;
       }
       if (request.method === 'GET' && path === '/quotes') {

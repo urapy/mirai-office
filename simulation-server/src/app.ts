@@ -2,6 +2,7 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { AccountService } from './accountService.js';
+import { getNvidiaWatchReport } from './companyWatch.js';
 import { MarketEngine } from './marketEngine.js';
 
 const ALLOWED_UI_ORIGINS = new Set(['http://127.0.0.1:5173', 'http://127.0.0.1:5174']);
@@ -22,6 +23,7 @@ export async function createSimulationApp(
 
   app.get('/api/health', async () => ({ status: 'ok', service: 'mirai-simulation' }));
   app.get('/api/products', async () => ({ products: market.getProducts() }));
+  app.get('/api/company-watch/nvidia', async () => getNvidiaWatchReport());
   app.get('/api/quotes', async () => ({ quotes: market.getQuotes() }));
   app.get('/api/work-events', async (request) => {
     const query = request.query as { limit?: string };

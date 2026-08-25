@@ -1,5 +1,6 @@
 export interface FictionalProduct {
   id: string;
+  kind: 'fund' | 'company-watch';
   name: string;
   shortName: string;
   sector: string;
@@ -16,6 +17,7 @@ export interface FictionalCompany {
 export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
   {
     id: 'world-growth',
+    kind: 'fund',
     name: 'おかねを支える金融ファンド',
     shortName: '金融ファンド',
     sector: '金融',
@@ -29,6 +31,7 @@ export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
   },
   {
     id: 'daily-life',
+    kind: 'fund',
     name: 'くらしを便利にするITファンド',
     shortName: 'ITファンド',
     sector: 'IT',
@@ -42,6 +45,7 @@ export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
   },
   {
     id: 'future-tech',
+    kind: 'fund',
     name: 'ものづくり産業ファンド',
     shortName: '産業ファンド',
     sector: '産業',
@@ -51,6 +55,25 @@ export const FICTIONAL_PRODUCTS: readonly FictionalProduct[] = [
       { actorId: 1003, name: 'はこぶロボット工場' },
       { actorId: 1006, name: 'みらい部品社' },
       { actorId: 1009, name: 'エコエネルギー社' },
+    ],
+  },
+  {
+    id: 'nvidia-watch',
+    kind: 'company-watch',
+    name: 'NVIDIA 企業ウォッチ',
+    shortName: 'NVIDIA',
+    sector: 'AI・半導体',
+    description: 'NVIDIAの公式発表をAIが見守り、会社の動きを子ども向けに伝える学習機能',
+    officeRoomName: 'AIコンピューティングラボ',
+    companies: [
+      { actorId: 1401, name: '半導体設計チーム' },
+      { actorId: 1402, name: 'AIソフトウェアチーム' },
+      { actorId: 1403, name: 'データセンターチーム' },
+      { actorId: 1404, name: 'ネットワークチーム' },
+      { actorId: 1405, name: 'ロボット研究チーム' },
+      { actorId: 1406, name: '製品テストチーム' },
+      { actorId: 1407, name: '省エネ研究チーム' },
+      { actorId: 1408, name: '公式情報確認チーム' },
     ],
   },
 ];

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { CompanyWatchCard } from './CompanyWatchCard.js';
 import { getFundRoom } from './fundRooms.js';
 import { FICTIONAL_PRODUCTS, getProductActorIds } from './productCatalog.js';
 import {
   BROKERAGE_UI_URL,
+  type CompanyWatchReport,
   loadRealtimeSnapshot,
   type RealtimeHolding,
   type RealtimePerformanceState,
@@ -17,6 +19,7 @@ interface VirtualAccountPanelProps {
   onVisibleActorIdsChange?: (actorIds: number[]) => void;
   onWorkEvent?: (event: RealtimeWorkEvent) => void;
   onPerformanceStatesChange?: (states: RealtimePerformanceState[]) => void;
+  onCompanyWatchReport?: (report: CompanyWatchReport) => void;
 }
 
 function formatYen(value: number): string {
@@ -64,6 +67,7 @@ export function VirtualAccountPanel({
   onVisibleActorIdsChange,
   onWorkEvent,
   onPerformanceStatesChange,
+  onCompanyWatchReport,
 }: VirtualAccountPanelProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(
     () => typeof window === 'undefined' || !window.matchMedia('(max-width: 600px)').matches,
@@ -233,23 +237,29 @@ export function VirtualAccountPanel({
         )}
       </div>
 
-      <div className="mirai-learning-note">
-        <span>{latestWorkEvent?.headline ?? '学びのメモ'}</span>
-        <p>
-          {latestWorkEvent
-            ? latestWorkEvent.childMessage
-            : connection === 'live'
-              ? '商品の値段は、会社や社会のさまざまな動きによって少しずつ変わります。'
-              : snapshot
-                ? 'いまは価格の更新を待っています。最後に受け取った金額を表示しています。'
-                : '仮想市場APIとの接続を待っています。積み立ては保護者用の仮想証券口座で行います。'}
-        </p>
-      </div>
+      {activeProductId === 'nvidia-watch' ? (
+        <CompanyWatchCard onReport={onCompanyWatchReport} />
+      ) : (
+        <div className="mirai-learning-note">
+          <span>{latestWorkEvent?.headline ?? '学びのメモ'}</span>
+          <p>
+            {latestWorkEvent
+              ? latestWorkEvent.childMessage
+              : connection === 'live'
+                ? '商品の値段は、会社や社会のさまざまな動きによって少しずつ変わります。'
+                : snapshot
+                  ? 'いまは価格の更新を待っています。最後に受け取った金額を表示しています。'
+                  : '仮想市場APIとの接続を待っています。積み立ては保護者用の仮想証券口座で行います。'}
+          </p>
+        </div>
+      )}
 
       {error && <p className="mirai-api-error">仮想市場APIに接続できません。</p>}
 
       <footer className="mirai-dashboard-footer">
-        <span>学習用の架空口座です</span>
+        <span>
+          {activeProductId === 'nvidia-watch' ? '企業情報は学習用です' : '学習用の架空口座です'}
+        </span>
         <a href={BROKERAGE_UI_URL} target="_blank" rel="noreferrer">
           保護者用の仮想証券口座を開く <span aria-hidden="true">↗</span>
         </a>

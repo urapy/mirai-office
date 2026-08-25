@@ -45,7 +45,8 @@ export function FundRoomSwitcher({
               <span className="mirai-room-tab-dot" />
               <span>{product.shortName}</span>
               <small>
-                {room.name} · {isOwned ? '活動中' : '見学'}
+                {room.name} ·{' '}
+                {product.kind === 'company-watch' ? '自動調査' : isOwned ? '活動中' : '見学'}
               </small>
             </button>
           );
@@ -53,13 +54,27 @@ export function FundRoomSwitcher({
       </div>
       <div className="mirai-performance" aria-label="仕事コンディション">
         <div>
-          <span>仕事コンディション</span>
-          <strong>{performanceState?.label ?? '通常'}</strong>
+          <span>
+            {activeProduct.kind === 'company-watch' ? '調査ステータス' : '仕事コンディション'}
+          </span>
+          <strong>
+            {activeProduct.kind === 'company-watch'
+              ? '公式情報を確認'
+              : (performanceState?.label ?? '通常')}
+          </strong>
         </div>
         <div className="mirai-performance-track">
-          <span style={{ width: `${performanceState?.score ?? 55}%` }} />
+          <span
+            style={{
+              width: `${activeProduct.kind === 'company-watch' ? 100 : (performanceState?.score ?? 55)}%`,
+            }}
+          />
         </div>
-        <small>{performanceState?.headline ?? 'いつもの仕事を続けています'}</small>
+        <small>
+          {activeProduct.kind === 'company-watch'
+            ? 'NVIDIA Newsroomの最新発表を自動で調べます'
+            : (performanceState?.headline ?? 'いつもの仕事を続けています')}
+        </small>
       </div>
     </nav>
   );

@@ -10,10 +10,10 @@ import {
 import { getFictionalProduct } from '../src/miraiOffice/productCatalog.ts';
 import { TileType } from '../src/office/types.ts';
 
-test('defines one distinct room for each fictional fund', () => {
+test('defines one distinct room for each fund and company-watch subject', () => {
   assert.deepEqual(
     FUND_ROOMS.map((room) => room.productId),
-    ['world-growth', 'daily-life', 'future-tech'],
+    ['world-growth', 'daily-life', 'future-tech', 'nvidia-watch'],
   );
 
   const furnitureSignatures = new Set<string>();
@@ -74,6 +74,10 @@ test('returns only the purchased actor assigned to the selected room', () => {
     getVisibleActorIdsForRoom('future-tech', purchasedActorIds),
     [1003, 1006, 1009, 1301, 1302, 1303, 1304, 1305],
   );
+  assert.deepEqual(
+    getVisibleActorIdsForRoom('nvidia-watch', []),
+    [1401, 1402, 1403, 1404, 1405, 1406, 1407, 1408],
+  );
 });
 
 test('presents the finance room as counters, customer seating, and a loan meeting area', () => {
@@ -107,6 +111,16 @@ test('presents the industry room as a manufacturing floor', () => {
   assert.equal(furnitureTypes.filter((type) => type === 'DOUBLE_BOOKSHELF').length, 2);
   assert.equal(furnitureTypes.filter((type) => type === 'DESK_FRONT').length, 0);
   assert.equal(Object.keys(industryRoom.actorSeatUids).length, 8);
+});
+
+test('presents the NVIDIA watch room as an AI computing lab', () => {
+  const room = getFundRoom('nvidia-watch');
+  const furnitureTypes = room.layout.furniture.map((item) => item.type);
+
+  assert.equal(room.name, 'AIコンピューティングラボ');
+  assert.match(room.concept, /AI.*半導体.*サーバー.*ネットワーク.*ソフトウェア/);
+  assert.equal(furnitureTypes.filter((type) => type.startsWith('PC_FRONT_ON_')).length, 8);
+  assert.equal(Object.keys(room.actorSeatUids).length, 8);
 });
 
 test('rejects unknown fund rooms', () => {

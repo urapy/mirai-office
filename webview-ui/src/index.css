@@ -560,6 +560,111 @@
   line-height: 1.55;
 }
 
+.mirai-company-watch {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(118, 185, 0, 0.16), transparent 45%),
+    rgba(8, 18, 15, 0.64);
+  border: 1px solid rgba(118, 185, 0, 0.24);
+  border-radius: 13px;
+}
+
+.mirai-company-watch.is-loading {
+  min-height: 82px;
+  justify-content: center;
+}
+
+.mirai-company-watch-heading,
+.mirai-watch-activity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mirai-company-watch-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mirai-company-watch-heading span,
+.mirai-company-watch section > span,
+.mirai-watch-activity > span,
+.mirai-company-watch.is-loading > span {
+  color: #92a69d;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+}
+
+.mirai-company-watch-heading strong {
+  font-size: 17px;
+}
+
+.mirai-watch-status {
+  padding: 4px 7px;
+  color: #c8f28b;
+  font-size: 9px;
+  background: rgba(118, 185, 0, 0.12);
+  border: 1px solid rgba(118, 185, 0, 0.24);
+  border-radius: 999px;
+}
+
+.mirai-watch-status--fallback {
+  color: #fcd98d;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+.mirai-watch-activity {
+  padding: 9px 10px;
+  background: rgba(118, 185, 0, 0.08);
+  border-radius: 9px;
+}
+
+.mirai-watch-activity strong {
+  color: #c8f28b;
+  font-size: 12px;
+}
+
+.mirai-company-watch section {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.mirai-company-watch section p,
+.mirai-company-watch details p {
+  margin: 4px 0 0;
+  color: #c3cec8;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.mirai-company-watch details {
+  color: #92a69d;
+  font-size: 10px;
+}
+
+.mirai-company-watch summary {
+  min-height: 28px;
+  cursor: pointer;
+}
+
+.mirai-company-watch details a,
+.mirai-company-watch details small {
+  display: block;
+}
+
+.mirai-company-watch details a {
+  margin-bottom: 4px;
+  color: #b8e87b;
+  line-height: 1.4;
+}
+
 .mirai-api-error {
   margin: -8px 0 0;
   color: #ff9bad;
@@ -690,7 +795,7 @@
 
 .mirai-room-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -725,6 +830,10 @@
 
 .mirai-room-tab--future-tech {
   --room-accent: #a78bfa;
+}
+
+.mirai-room-tab--nvidia-watch {
+  --room-accent: #76b900;
 }
 
 .mirai-room-tab:hover {

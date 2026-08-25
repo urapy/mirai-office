@@ -25,7 +25,11 @@ import {
   getProductActorIds,
   getWorkEventActorId,
 } from './miraiOffice/productCatalog.js';
-import type { RealtimePerformanceState, RealtimeWorkEvent } from './miraiOffice/realtimeApi.js';
+import type {
+  CompanyWatchReport,
+  RealtimePerformanceState,
+  RealtimeWorkEvent,
+} from './miraiOffice/realtimeApi.js';
 import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
 import { ToolOverlay } from './office/components/ToolOverlay.js';
@@ -112,6 +116,7 @@ function App() {
   const [miraiVisibleActorIds, setMiraiVisibleActorIds] = useState<number[]>([]);
   const [performanceStates, setPerformanceStates] = useState<RealtimePerformanceState[]>([]);
   const handledPerformanceEventIds = useRef(new Set<string>());
+  const handledCompanyWatchIds = useRef(new Set<string>());
   const [activeRoomProductId, setActiveRoomProductId] = useState('world-growth');
   const handleMiraiVisibleActorIdsChange = useCallback((actorIds: number[]) => {
     setMiraiVisibleActorIds((current) => {
@@ -167,6 +172,25 @@ function App() {
       }
     },
     [activeRoomProductId, activeRoomVisibleActorIds],
+  );
+  const handleCompanyWatchReport = useCallback(
+    (report: CompanyWatchReport) => {
+      if (activeRoomProductId !== report.roomProductId) return;
+      const reportId = `${report.sourceUrl}:${report.sourcePublishedAt}`;
+      if (handledCompanyWatchIds.current.has(reportId)) return;
+      handledCompanyWatchIds.current.add(reportId);
+      const actorIds = getProductActorIds(report.roomProductId).slice(
+        0,
+        report.reactionLevel * 2 + 2,
+      );
+      const officeState = getOfficeState();
+      actorIds.forEach((actorId, index) => {
+        officeState.showStoryCueBubble(actorId, report.cue, 3 + report.reactionLevel);
+        if (report.reactionLevel === 3 && index % 3 === 1)
+          officeState.startRoutineExcursion(actorId);
+      });
+    },
+    [activeRoomProductId],
   );
 
   useEffect(() => {
@@ -664,6 +688,7 @@ function App() {
             onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange}
             onWorkEvent={handleMiraiWorkEvent}
             onPerformanceStatesChange={handlePerformanceStatesChange}
+            onCompanyWatchReport={handleCompanyWatchReport}
           />
         </>
       )}

@@ -162,6 +162,62 @@
       "palette": 3,
       "hueShift": 235,
       "activity": "working"
+    },
+    {
+      "id": 1401,
+      "label": "半導体設計チーム",
+      "palette": 2,
+      "hueShift": 95,
+      "activity": "working"
+    },
+    {
+      "id": 1402,
+      "label": "AIソフトウェアチーム",
+      "palette": 0,
+      "hueShift": 120,
+      "activity": "working"
+    },
+    {
+      "id": 1403,
+      "label": "データセンターチーム",
+      "palette": 4,
+      "hueShift": 145,
+      "activity": "working"
+    },
+    {
+      "id": 1404,
+      "label": "ネットワークチーム",
+      "palette": 1,
+      "hueShift": 170,
+      "activity": "working"
+    },
+    {
+      "id": 1405,
+      "label": "ロボット研究チーム",
+      "palette": 3,
+      "hueShift": 195,
+      "activity": "working"
+    },
+    {
+      "id": 1406,
+      "label": "製品テストチーム",
+      "palette": 5,
+      "hueShift": 220,
+      "activity": "working"
+    },
+    {
+      "id": 1407,
+      "label": "省エネ研究チーム",
+      "palette": 2,
+      "hueShift": 245,
+      "activity": "working"
+    },
+    {
+      "id": 1408,
+      "label": "公式情報確認チーム",
+      "palette": 0,
+      "hueShift": 270,
+      "activity": "working"
     }
   ]
 }
