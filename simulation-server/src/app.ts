@@ -27,6 +27,23 @@ export async function createSimulationApp(
     const query = request.query as { limit?: string };
     return { workEvents: market.getWorkEvents(Number(query.limit ?? 20)) };
   });
+  app.get('/api/performance', async () => ({ performanceStates: market.getPerformanceStates() }));
+  app.post('/api/products/:productId/performance-events', async (request, reply) => {
+    const { productId } = request.params as { productId: string };
+    if (!isRecord(request.body) || typeof request.body.scenario !== 'string') {
+      return reply.code(400).send({ error: 'scenario is required' });
+    }
+    try {
+      return market.triggerPerformanceEvent(
+        productId,
+        request.body.scenario as Parameters<MarketEngine['triggerPerformanceEvent']>[1],
+      );
+    } catch (error) {
+      return reply
+        .code(400)
+        .send({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
   app.get('/api/quotes/history', async (request, reply) => {
     const query = request.query as { productId?: string; limit?: string };
     if (!query.productId) return reply.code(400).send({ error: 'productId is required' });
@@ -72,6 +89,7 @@ export async function createSimulationApp(
     const writeQuotes = (
       quotes: ReturnType<MarketEngine['getQuotes']>,
       workEvents: ReturnType<MarketEngine['getWorkEvents']> = [],
+      performanceStates = market.getPerformanceStates(),
     ) => {
       reply.raw.write(
         `event: quotes\ndata: ${JSON.stringify({
@@ -79,6 +97,7 @@ export async function createSimulationApp(
           account: account.getSnapshot(),
           events: account.getHistory(),
           workEvents,
+          performanceStates,
         })}\n\n`,
       );
     };

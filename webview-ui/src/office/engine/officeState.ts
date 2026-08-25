@@ -959,11 +959,15 @@ export class OfficeState {
     }
   }
 
-  showStoryCueBubble(id: number, cue: 'music' | 'sweat'): void {
+  showStoryCueBubble(
+    id: number,
+    cue: 'music' | 'sweat',
+    durationSeconds = STORY_CUE_BUBBLE_DURATION_SEC,
+  ): void {
     const ch = this.characters.get(id);
     if (ch) {
       ch.bubbleType = cue;
-      ch.bubbleTimer = STORY_CUE_BUBBLE_DURATION_SEC;
+      ch.bubbleTimer = durationSeconds;
     }
   }
 

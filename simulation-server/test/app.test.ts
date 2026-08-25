@@ -68,3 +68,25 @@ test('resets the accumulated contribution through the account API', async () => 
   assert.deepEqual(history.json().events, []);
   await app.close();
 });
+
+test('triggers and serves a guardian-controlled performance event', async () => {
+  const app = await createSimulationApp();
+  const triggered = await app.inject({
+    method: 'POST',
+    url: '/api/products/daily-life/performance-events',
+    payload: { scenario: 'major-loss' },
+  });
+  const performance = await app.inject({ method: 'GET', url: '/api/performance' });
+
+  assert.equal(triggered.statusCode, 200);
+  assert.equal(triggered.json().reactionLevel, 3);
+  assert.equal(triggered.json().cue, 'sweat');
+  assert.equal(
+    performance
+      .json()
+      .performanceStates.find((state: { productId: string }) => state.productId === 'daily-life')
+      .scenario,
+    'major-loss',
+  );
+  await app.close();
+});

@@ -6,6 +6,7 @@ import {
   BROKERAGE_UI_URL,
   loadRealtimeSnapshot,
   type RealtimeHolding,
+  type RealtimePerformanceState,
   type RealtimeSnapshot,
   type RealtimeWorkEvent,
   subscribeRealtimeQuotes,
@@ -15,6 +16,7 @@ interface VirtualAccountPanelProps {
   activeProductId: string;
   onVisibleActorIdsChange?: (actorIds: number[]) => void;
   onWorkEvent?: (event: RealtimeWorkEvent) => void;
+  onPerformanceStatesChange?: (states: RealtimePerformanceState[]) => void;
 }
 
 function formatYen(value: number): string {
@@ -61,6 +63,7 @@ export function VirtualAccountPanel({
   activeProductId,
   onVisibleActorIdsChange,
   onWorkEvent,
+  onPerformanceStatesChange,
 }: VirtualAccountPanelProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(
     () => typeof window === 'undefined' || !window.matchMedia('(max-width: 600px)').matches,
@@ -77,6 +80,7 @@ export function VirtualAccountPanel({
     void loadRealtimeSnapshot(controller.signal)
       .then((nextSnapshot) => {
         setSnapshot(nextSnapshot);
+        onPerformanceStatesChange?.(nextSnapshot.performanceStates);
         const ownedProductIds = new Set(
           nextSnapshot.account.holdings.map((holding) => holding.productId),
         );
@@ -102,6 +106,7 @@ export function VirtualAccountPanel({
     const unsubscribe = subscribeRealtimeQuotes(
       (nextSnapshot) => {
         setSnapshot(nextSnapshot);
+        onPerformanceStatesChange?.(nextSnapshot.performanceStates);
         const ownedProductIds = new Set(
           nextSnapshot.account.holdings.map((holding) => holding.productId),
         );
@@ -122,7 +127,7 @@ export function VirtualAccountPanel({
       controller.abort();
       unsubscribe();
     };
-  }, [activeProductId, onWorkEvent]);
+  }, [activeProductId, onPerformanceStatesChange, onWorkEvent]);
 
   const holdings = useMemo(() => snapshot?.account.holdings ?? [], [snapshot]);
   const visibleActorIds = useMemo(

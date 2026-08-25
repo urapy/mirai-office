@@ -208,6 +208,21 @@ main {
   font-size: 11px;
   line-height: 1.45;
 }
+.performance-mini {
+  height: 9px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: #07111f;
+  border: 1px solid #35506f;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+.performance-mini > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #fb7185 0%, #fbbf24 48%, #34d399 100%);
+  transition: width 500ms ease;
+}
 .product-card .price {
   font-size: 25px;
   font-weight: 800;
@@ -332,6 +347,44 @@ main {
   font-size: 11px;
   line-height: 1.6;
   margin: 14px 0 0;
+}
+.performance-control-panel > p:not(.eyebrow) {
+  margin: -8px 0 18px;
+  color: #9eb1ca;
+  line-height: 1.6;
+}
+.performance-control-panel > small {
+  display: block;
+  margin-top: 14px;
+  color: #7790af;
+  line-height: 1.5;
+}
+.performance-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.performance-button {
+  min-height: 44px;
+  padding: 10px 8px;
+  color: #dbe7f7;
+  font-weight: 800;
+  cursor: pointer;
+  background: #12243a;
+  border: 1px solid #2a405d;
+  border-radius: 10px;
+}
+.performance-button--rapid-growth,
+.performance-button--growth {
+  border-color: #277a69;
+}
+.performance-button--slump,
+.performance-button--major-loss {
+  border-color: #713044;
+}
+.performance-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .table-wrap {
   overflow-x: auto;
@@ -590,6 +643,17 @@ td:first-child {
   }
   .event-list > div {
     grid-template-columns: 34px minmax(0, 1fr);
+  }
+  .performance-actions {
+    display: flex;
+    margin-right: -12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  .performance-button {
+    min-width: 92px;
+    flex: 1 0 92px;
+    scroll-snap-align: start;
   }
   .event-list > div > span:last-child {
     grid-column: 2;

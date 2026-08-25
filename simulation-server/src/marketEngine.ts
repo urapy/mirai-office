@@ -1,4 +1,11 @@
-import type { SimulatedProduct, SimulatedQuote, SimulatedWorkEvent } from './types.js';
+import { baselinePerformance, PERFORMANCE_SCENARIOS } from './performance.js';
+import type {
+  PerformanceScenarioId,
+  PerformanceState,
+  SimulatedProduct,
+  SimulatedQuote,
+  SimulatedWorkEvent,
+} from './types.js';
 
 export const SIMULATED_PRODUCTS: readonly SimulatedProduct[] = [
   {
@@ -30,7 +37,11 @@ export const SIMULATED_PRODUCTS: readonly SimulatedProduct[] = [
   },
 ];
 
-type MarketListener = (quotes: SimulatedQuote[], workEvents: SimulatedWorkEvent[]) => void;
+type MarketListener = (
+  quotes: SimulatedQuote[],
+  workEvents: SimulatedWorkEvent[],
+  performanceStates: PerformanceState[],
+) => void;
 
 interface WorkEventTemplate {
   kind: SimulatedWorkEvent['kind'];
@@ -94,6 +105,8 @@ export class MarketEngine {
   private readonly histories = new Map<string, SimulatedQuote[]>();
   private readonly listeners = new Set<MarketListener>();
   private readonly workEventHistory: SimulatedWorkEvent[] = [];
+  private readonly performanceStates = new Map<string, PerformanceState>();
+  private performanceSequence = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private tick = 0;
 
@@ -111,6 +124,7 @@ export class MarketEngine {
       };
       this.quotes.set(product.id, quote);
       this.histories.set(product.id, [quote]);
+      this.performanceStates.set(product.id, baselinePerformance(product.id));
     }
   }
 
@@ -142,6 +156,74 @@ export class MarketEngine {
       .map((event) => ({ ...event }));
   }
 
+  getPerformanceStates(nowMs = Date.now()): PerformanceState[] {
+    return SIMULATED_PRODUCTS.map((product) => {
+      const state = this.performanceStates.get(product.id) ?? baselinePerformance(product.id);
+      if (state.expiresAt && Date.parse(state.expiresAt) <= nowMs)
+        return baselinePerformance(product.id);
+      return { ...state };
+    });
+  }
+
+  triggerPerformanceEvent(
+    productId: string,
+    scenarioId: PerformanceScenarioId,
+    nowMs = Date.now(),
+  ): PerformanceState {
+    const scenario = PERFORMANCE_SCENARIOS[scenarioId];
+    const previous = this.getQuote(productId);
+    this.tick++;
+    const price = Math.max(1_000, Math.round(previous.price * scenario.priceMultiplier));
+    const quote: SimulatedQuote = {
+      ...previous,
+      price,
+      previousPrice: previous.price,
+      change: price - previous.price,
+      changePercent: (price - previous.price) / previous.price,
+      tick: this.tick,
+      updatedAt: new Date(nowMs).toISOString(),
+    };
+    this.quotes.set(productId, quote);
+    this.histories.get(productId)?.push(quote);
+    const eventId = `performance-${productId}-${++this.performanceSequence}`;
+    const state: PerformanceState = {
+      productId,
+      eventId,
+      scenario: scenarioId,
+      label: scenario.label,
+      score: scenario.score,
+      reactionLevel: scenario.reactionLevel,
+      cue: scenario.cue,
+      headline: scenario.headline,
+      childMessage: scenario.childMessage,
+      startedAt: new Date(nowMs).toISOString(),
+      expiresAt: new Date(nowMs + 60_000).toISOString(),
+    };
+    this.performanceStates.set(productId, state);
+    const workEvents: SimulatedWorkEvent[] = scenario.cue
+      ? [
+          {
+            id: eventId,
+            productId,
+            kind: scenario.cue === 'sweat' ? 'challenge' : 'progress',
+            cue: scenario.cue,
+            source: 'guardian',
+            intensity: Math.max(1, scenario.reactionLevel) as 1 | 2 | 3,
+            scenario: scenarioId,
+            headline: scenario.headline,
+            childMessage: scenario.childMessage,
+            tick: this.tick,
+            createdAt: state.startedAt,
+          },
+        ]
+      : [];
+    this.workEventHistory.push(...workEvents);
+    for (const listener of this.listeners) {
+      listener(this.getQuotes(), workEvents, this.getPerformanceStates(nowMs));
+    }
+    return { ...state };
+  }
+
   advance(updatedAt = new Date().toISOString()): SimulatedQuote[] {
     this.tick++;
     SIMULATED_PRODUCTS.forEach((product, index) => {
@@ -168,7 +250,9 @@ export class MarketEngine {
     });
     const workEvents = this.createWorkEvents(updatedAt);
     const snapshot = this.getQuotes();
-    for (const listener of this.listeners) listener(snapshot, workEvents);
+    for (const listener of this.listeners) {
+      listener(snapshot, workEvents, this.getPerformanceStates(Date.parse(updatedAt)));
+    }
     return snapshot;
   }
 
@@ -201,6 +285,8 @@ export class MarketEngine {
         id: `work-${product.id}-${this.tick}`,
         productId: product.id,
         ...template,
+        source: 'automatic',
+        intensity: 1,
         tick: this.tick,
         createdAt,
       });

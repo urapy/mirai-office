@@ -1,16 +1,19 @@
 import { FUND_ROOMS } from './fundRooms.js';
 import { getFictionalProduct } from './productCatalog.js';
+import type { RealtimePerformanceState } from './realtimeApi.js';
 
 interface FundRoomSwitcherProps {
   activeProductId: string;
   ownedProductIds: readonly string[];
   onRoomChange: (productId: string) => void;
+  performanceState?: RealtimePerformanceState;
 }
 
 export function FundRoomSwitcher({
   activeProductId,
   ownedProductIds,
   onRoomChange,
+  performanceState,
 }: FundRoomSwitcherProps) {
   const activeRoom = FUND_ROOMS.find((room) => room.productId === activeProductId)!;
   const activeProduct = getFictionalProduct(activeProductId);
@@ -47,6 +50,16 @@ export function FundRoomSwitcher({
             </button>
           );
         })}
+      </div>
+      <div className="mirai-performance" aria-label="仕事コンディション">
+        <div>
+          <span>仕事コンディション</span>
+          <strong>{performanceState?.label ?? '通常'}</strong>
+        </div>
+        <div className="mirai-performance-track">
+          <span style={{ width: `${performanceState?.score ?? 55}%` }} />
+        </div>
+        <small>{performanceState?.headline ?? 'いつもの仕事を続けています'}</small>
       </div>
     </nav>
   );

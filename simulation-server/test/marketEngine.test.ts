@@ -42,6 +42,8 @@ test('creates meaningful work events independently of quote direction', () => {
       productId: 'world-growth',
       kind: 'progress',
       cue: 'music',
+      source: 'automatic',
+      intensity: 1,
       headline: 'にじいろ銀行の新しいサービスが始まりました',
       childMessage: 'お金を安全に預けたり送ったりするしくみを、使いやすくできました。',
       tick: 3,
@@ -54,4 +56,17 @@ test('creates meaningful work events independently of quote direction', () => {
   assert.equal(latest.productId, 'world-growth');
   assert.equal(latest.kind, 'challenge');
   assert.equal(latest.cue, 'sweat');
+});
+
+test('applies a guardian performance event to price and reaction intensity', () => {
+  const market = new MarketEngine(42);
+  const before = market.getQuote('world-growth').price;
+  const state = market.triggerPerformanceEvent('world-growth', 'rapid-growth', 1_000);
+
+  assert.equal(state.score, 95);
+  assert.equal(state.reactionLevel, 3);
+  assert.equal(state.cue, 'music');
+  assert.equal(market.getQuote('world-growth').price > before, true);
+  assert.equal(market.getWorkEvents(1)[0].source, 'guardian');
+  assert.equal(market.getWorkEvents(1)[0].intensity, 3);
 });

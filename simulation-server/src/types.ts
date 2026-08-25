@@ -23,10 +23,29 @@ export interface SimulatedWorkEvent {
   productId: string;
   kind: 'progress' | 'challenge';
   cue: 'music' | 'sweat';
+  source: 'automatic' | 'guardian';
+  intensity: 1 | 2 | 3;
+  scenario?: PerformanceScenarioId;
   headline: string;
   childMessage: string;
   tick: number;
   createdAt: string;
+}
+
+export type PerformanceScenarioId = 'rapid-growth' | 'growth' | 'steady' | 'slump' | 'major-loss';
+
+export interface PerformanceState {
+  productId: string;
+  eventId: string;
+  scenario: PerformanceScenarioId;
+  label: string;
+  score: number;
+  reactionLevel: 0 | 1 | 2 | 3;
+  cue: 'music' | 'sweat' | null;
+  headline: string;
+  childMessage: string;
+  startedAt: string;
+  expiresAt: string | null;
 }
 
 export interface AccountHolding {

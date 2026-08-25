@@ -18,6 +18,22 @@ export interface Quote {
   updatedAt: string;
 }
 
+export type PerformanceScenarioId = 'rapid-growth' | 'growth' | 'steady' | 'slump' | 'major-loss';
+
+export interface PerformanceState {
+  productId: string;
+  eventId: string;
+  scenario: PerformanceScenarioId;
+  label: string;
+  score: number;
+  reactionLevel: 0 | 1 | 2 | 3;
+  cue: 'music' | 'sweat' | null;
+  headline: string;
+  childMessage: string;
+  startedAt: string;
+  expiresAt: string | null;
+}
+
 export interface Holding {
   productId: string;
   quantity: number;

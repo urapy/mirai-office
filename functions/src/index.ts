@@ -2,7 +2,15 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { onRequest } from 'firebase-functions/v2/https';
 
-import { contribute, getAccount, getAccountHistory, resetAccount } from './account.js';
+import {
+  contribute,
+  getAccount,
+  getAccountHistory,
+  getPerformanceMultipliers,
+  getPerformanceStates,
+  resetAccount,
+  triggerPerformanceEvent,
+} from './account.js';
 import { CLOUD_PRODUCTS, getCloudHistory, getCloudQuotes, getCloudWorkEvents } from './market.js';
 
 if (getApps().length === 0) initializeApp();
@@ -42,7 +50,7 @@ export const api = onRequest(
         return;
       }
       if (request.method === 'GET' && path === '/quotes') {
-        response.json({ quotes: getCloudQuotes(nowMs) });
+        response.json({ quotes: getCloudQuotes(nowMs, await getPerformanceMultipliers(nowMs)) });
         return;
       }
       if (request.method === 'GET' && path === '/quotes/history') {
@@ -53,6 +61,10 @@ export const api = onRequest(
       }
       if (request.method === 'GET' && path === '/work-events') {
         response.json({ workEvents: getCloudWorkEvents(Number(request.query.limit ?? 20), nowMs) });
+        return;
+      }
+      if (request.method === 'GET' && path === '/performance') {
+        response.json({ performanceStates: await getPerformanceStates(nowMs) });
         return;
       }
       if (request.method === 'GET' && path === '/accounts/demo') {
@@ -76,6 +88,23 @@ export const api = onRequest(
       if (request.method === 'POST' && path === '/accounts/demo/reset') {
         await requireGuardian(request.headers.authorization);
         response.json(await resetAccount(nowMs));
+        return;
+      }
+      const performanceMatch = path.match(/^\/products\/([^/]+)\/performance-events$/);
+      if (request.method === 'POST' && performanceMatch) {
+        await requireGuardian(request.headers.authorization);
+        const { scenario } = request.body as { scenario?: unknown };
+        if (typeof scenario !== 'string') {
+          response.status(400).json({ error: 'scenario is required' });
+          return;
+        }
+        response.json(
+          await triggerPerformanceEvent(
+            performanceMatch[1],
+            scenario as Parameters<typeof triggerPerformanceEvent>[1],
+            nowMs,
+          ),
+        );
         return;
       }
       response.status(404).json({ error: `Route ${request.method}:${path} not found` });

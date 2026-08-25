@@ -22,10 +22,26 @@ export interface RealtimeWorkEvent {
   productId: string;
   kind: 'progress' | 'challenge';
   cue: 'music' | 'sweat';
+  source: 'automatic' | 'guardian';
+  intensity: 1 | 2 | 3;
   headline: string;
   childMessage: string;
   tick: number;
   createdAt: string;
+}
+
+export interface RealtimePerformanceState {
+  productId: string;
+  eventId: string;
+  scenario: 'rapid-growth' | 'growth' | 'steady' | 'slump' | 'major-loss';
+  label: string;
+  score: number;
+  reactionLevel: 0 | 1 | 2 | 3;
+  cue: 'music' | 'sweat' | null;
+  headline: string;
+  childMessage: string;
+  startedAt: string;
+  expiresAt: string | null;
 }
 
 export interface RealtimeAccount {
@@ -41,6 +57,7 @@ export interface RealtimeSnapshot {
   quotes: RealtimeQuote[];
   account: RealtimeAccount;
   workEvents: RealtimeWorkEvent[];
+  performanceStates: RealtimePerformanceState[];
 }
 
 export const SIMULATION_API_BASE = import.meta.env.VITE_SIMULATION_API ?? 'http://127.0.0.1:4310';
@@ -56,15 +73,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function loadRealtimeSnapshot(signal?: AbortSignal): Promise<RealtimeSnapshot> {
-  const [quoteResponse, account, workEventResponse] = await Promise.all([
+  const [quoteResponse, account, workEventResponse, performanceResponse] = await Promise.all([
     request<{ quotes: RealtimeQuote[] }>('/api/quotes', { signal }),
     request<RealtimeAccount>('/api/accounts/demo', { signal }),
     request<{ workEvents: RealtimeWorkEvent[] }>('/api/work-events?limit=20', { signal }),
+    request<{ performanceStates: RealtimePerformanceState[] }>('/api/performance', { signal }),
   ]);
   return {
     quotes: quoteResponse.quotes,
     account,
     workEvents: workEventResponse.workEvents,
+    performanceStates: performanceResponse.performanceStates,
   };
 }
 
@@ -100,13 +119,11 @@ export function subscribeRealtimeQuotes(
 
   const source = new EventSource(`${SIMULATION_API_BASE}/api/stream/quotes`);
   source.addEventListener('quotes', (event) => {
-    const payload = JSON.parse((event as MessageEvent<string>).data) as Omit<
-      RealtimeSnapshot,
-      'workEvents'
-    > & { workEvents?: RealtimeWorkEvent[] };
+    const payload = JSON.parse((event as MessageEvent<string>).data) as RealtimeSnapshot;
     const snapshot: RealtimeSnapshot = {
       ...payload,
       workEvents: payload.workEvents ?? [],
+      performanceStates: payload.performanceStates ?? [],
     };
     onSnapshot(snapshot);
     onConnectionChange(true);

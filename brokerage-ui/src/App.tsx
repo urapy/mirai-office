@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { contribute, loadHistory, resetAccount, subscribeDashboard } from './api.js';
+import {
+  contribute,
+  loadHistory,
+  resetAccount,
+  subscribeDashboard,
+  triggerPerformanceEvent,
+} from './api.js';
 import {
   cloudAuthEnabled,
   type GuardianUser,
@@ -9,10 +15,24 @@ import {
   signOutGuardian,
 } from './auth.js';
 import { PriceChart } from './PriceChart.js';
-import type { Account, AccountEvent, Product, Quote } from './types.js';
+import type {
+  Account,
+  AccountEvent,
+  PerformanceScenarioId,
+  PerformanceState,
+  Product,
+  Quote,
+} from './types.js';
 
 const yen = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' });
 const number = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 4 });
+const PERFORMANCE_OPTIONS: readonly { id: PerformanceScenarioId; label: string }[] = [
+  { id: 'rapid-growth', label: '急成長' },
+  { id: 'growth', label: '好調' },
+  { id: 'steady', label: '通常' },
+  { id: 'slump', label: '苦戦' },
+  { id: 'major-loss', label: '大赤字' },
+];
 
 function signedYen(value: number): string {
   return `${value > 0 ? '+' : ''}${yen.format(value)}`;
@@ -23,6 +43,7 @@ export default function App() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [account, setAccount] = useState<Account | null>(null);
   const [events, setEvents] = useState<AccountEvent[]>([]);
+  const [performanceStates, setPerformanceStates] = useState<PerformanceState[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('world-growth');
   const [amount, setAmount] = useState(10_000);
   const [priceHistory, setPriceHistory] = useState<Record<string, Quote[]>>({});
@@ -40,6 +61,7 @@ export default function App() {
         setQuotes(dashboard.quotes);
         setAccount(dashboard.account);
         setEvents(dashboard.events);
+        setPerformanceStates(dashboard.performanceStates);
         setPriceHistory((current) => {
           const next = { ...current };
           for (const quote of dashboard.quotes) {
@@ -126,6 +148,22 @@ export default function App() {
     }
   };
 
+  const handlePerformanceEvent = async (scenario: PerformanceScenarioId) => {
+    setSubmitting(true);
+    try {
+      const state = await triggerPerformanceEvent(selectedProductId, scenario);
+      setPerformanceStates((current) => [
+        ...current.filter((item) => item.productId !== state.productId),
+        state,
+      ]);
+      setError(null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -194,6 +232,16 @@ export default function App() {
                 <span className="theme">{product.theme}</span>
                 <strong>{product.name}</strong>
                 <span className="office-room-link">みらいオフィス：{product.officeRoomName}</span>
+                <div
+                  className="performance-mini"
+                  aria-label={`${product.name}の仕事コンディション`}
+                >
+                  <span
+                    style={{
+                      width: `${performanceStates.find((state) => state.productId === product.id)?.score ?? 55}%`,
+                    }}
+                  />
+                </div>
                 <span className="price">{quote ? yen.format(quote.price) : '—'}</span>
                 <span className={`change ${(quote?.change ?? 0) >= 0 ? 'positive' : 'negative'}`}>
                   {quote
@@ -274,6 +322,30 @@ export default function App() {
             </p>
           </section>
         </div>
+
+        <section className="panel performance-control-panel">
+          <p className="eyebrow">LEARNING EVENT</p>
+          <h2>架空の業績イベントを発生させる</h2>
+          <p>
+            {selectedProduct?.name ?? '選択中の商品'}の価格と、
+            {selectedProduct?.officeRoomName ?? '対応する部屋'}の反応を約1分間変化させます。
+          </p>
+          <div className="performance-actions">
+            {PERFORMANCE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                className={`performance-button performance-button--${option.id}`}
+                disabled={submitting || connection !== 'live' || !canManage}
+                onClick={() => void handlePerformanceEvent(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <small>
+            学習用の架空シナリオです。実在企業の業績や将来の値動きを表すものではありません。
+          </small>
+        </section>
 
         <section className="panel">
           <div className="panel-heading">

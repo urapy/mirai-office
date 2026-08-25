@@ -25,7 +25,7 @@ import {
   getProductActorIds,
   getWorkEventActorId,
 } from './miraiOffice/productCatalog.js';
-import type { RealtimeWorkEvent } from './miraiOffice/realtimeApi.js';
+import type { RealtimePerformanceState, RealtimeWorkEvent } from './miraiOffice/realtimeApi.js';
 import { VirtualAccountPanel } from './miraiOffice/VirtualAccountPanel.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
 import { ToolOverlay } from './office/components/ToolOverlay.js';
@@ -110,6 +110,8 @@ function App() {
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
 
   const [miraiVisibleActorIds, setMiraiVisibleActorIds] = useState<number[]>([]);
+  const [performanceStates, setPerformanceStates] = useState<RealtimePerformanceState[]>([]);
+  const handledPerformanceEventIds = useRef(new Set<string>());
   const [activeRoomProductId, setActiveRoomProductId] = useState('world-growth');
   const handleMiraiVisibleActorIdsChange = useCallback((actorIds: number[]) => {
     setMiraiVisibleActorIds((current) => {
@@ -137,6 +139,34 @@ function App() {
   const activeRoomVisibleActorIds = useMemo(
     () => getVisibleActorIdsForRoom(activeRoomProductId, miraiVisibleActorIds),
     [activeRoomProductId, miraiVisibleActorIds],
+  );
+  const handlePerformanceStatesChange = useCallback(
+    (states: RealtimePerformanceState[]) => {
+      setPerformanceStates(states);
+      const state = states.find((item) => item.productId === activeRoomProductId);
+      if (
+        !state?.cue ||
+        state.reactionLevel === 0 ||
+        !state.eventId.startsWith('performance-') ||
+        handledPerformanceEventIds.current.has(state.eventId)
+      ) {
+        return;
+      }
+      handledPerformanceEventIds.current.add(state.eventId);
+      const reactionCounts = [0, 2, 5, 8] as const;
+      const reactingActorIds = activeRoomVisibleActorIds.slice(
+        0,
+        reactionCounts[state.reactionLevel],
+      );
+      const officeState = getOfficeState();
+      for (const [index, actorId] of reactingActorIds.entries()) {
+        officeState.showStoryCueBubble(actorId, state.cue, 2 + state.reactionLevel * 1.5);
+        if (state.reactionLevel === 3 && index % 2 === 1) {
+          officeState.startRoutineExcursion(actorId);
+        }
+      }
+    },
+    [activeRoomProductId, activeRoomVisibleActorIds],
   );
 
   useEffect(() => {
@@ -625,11 +655,15 @@ function App() {
             activeProductId={activeRoomProductId}
             ownedProductIds={ownedProductIds}
             onRoomChange={setActiveRoomProductId}
+            performanceState={performanceStates.find(
+              (state) => state.productId === activeRoomProductId,
+            )}
           />
           <VirtualAccountPanel
             activeProductId={activeRoomProductId}
             onVisibleActorIdsChange={handleMiraiVisibleActorIdsChange}
             onWorkEvent={handleMiraiWorkEvent}
+            onPerformanceStatesChange={handlePerformanceStatesChange}
           />
         </>
       )}

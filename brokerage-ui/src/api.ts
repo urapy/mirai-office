@@ -1,5 +1,12 @@
 import { cloudAuthEnabled, getGuardianToken } from './auth.js';
-import type { Account, AccountEvent, Product, Quote } from './types.js';
+import type {
+  Account,
+  AccountEvent,
+  PerformanceScenarioId,
+  PerformanceState,
+  Product,
+  Quote,
+} from './types.js';
 
 export const API_BASE = import.meta.env.VITE_SIMULATION_API ?? 'http://127.0.0.1:4310';
 
@@ -54,14 +61,32 @@ export async function loadDashboard(): Promise<{
   quotes: Quote[];
   account: Account;
   events: AccountEvent[];
+  performanceStates: PerformanceState[];
 }> {
-  const [products, quotes, account, history] = await Promise.all([
+  const [products, quotes, account, history, performance] = await Promise.all([
     request<{ products: Product[] }>('/api/products'),
     request<{ quotes: Quote[] }>('/api/quotes'),
     request<Account>('/api/accounts/demo'),
     request<{ events: AccountEvent[] }>('/api/accounts/demo/history'),
+    request<{ performanceStates: PerformanceState[] }>('/api/performance'),
   ]);
-  return { products: products.products, quotes: quotes.quotes, account, events: history.events };
+  return {
+    products: products.products,
+    quotes: quotes.quotes,
+    account,
+    events: history.events,
+    performanceStates: performance.performanceStates,
+  };
+}
+
+export function triggerPerformanceEvent(
+  productId: string,
+  scenario: PerformanceScenarioId,
+): Promise<PerformanceState> {
+  return request(`/api/products/${productId}/performance-events`, {
+    method: 'POST',
+    body: JSON.stringify({ scenario }),
+  });
 }
 
 export function contribute(productId: string, amount: number): Promise<Account> {

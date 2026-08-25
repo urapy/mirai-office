@@ -23,11 +23,78 @@ export interface CloudWorkEvent {
   productId: string;
   kind: 'progress' | 'challenge';
   cue: 'music' | 'sweat';
+  source: 'automatic';
+  intensity: 1;
   headline: string;
   childMessage: string;
   tick: number;
   createdAt: string;
 }
+
+export type CloudPerformanceScenarioId =
+  'rapid-growth' | 'growth' | 'steady' | 'slump' | 'major-loss';
+
+export interface CloudPerformanceState {
+  productId: string;
+  eventId: string;
+  scenario: CloudPerformanceScenarioId;
+  label: string;
+  score: number;
+  reactionLevel: 0 | 1 | 2 | 3;
+  cue: 'music' | 'sweat' | null;
+  headline: string;
+  childMessage: string;
+  startedAt: string;
+  expiresAt: string | null;
+}
+
+export const CLOUD_PERFORMANCE_SCENARIOS = {
+  'rapid-growth': {
+    label: '急成長',
+    score: 95,
+    reactionLevel: 3,
+    cue: 'music',
+    multiplier: 1.08,
+    headline: '大きな仕事が一気に進みました',
+    childMessage: '会社の取り組みがうまく進み、期待が大きく高まった架空イベントです。',
+  },
+  growth: {
+    label: '好調',
+    score: 76,
+    reactionLevel: 1,
+    cue: 'music',
+    multiplier: 1.03,
+    headline: '仕事が順調に進んでいます',
+    childMessage: '会社の仕事が計画より順調に進んだ架空イベントです。',
+  },
+  steady: {
+    label: '通常',
+    score: 55,
+    reactionLevel: 0,
+    cue: null,
+    multiplier: 1,
+    headline: 'いつもの仕事を続けています',
+    childMessage: '特別な変化はなく、会社が日々の仕事を続けている状態です。',
+  },
+  slump: {
+    label: '苦戦',
+    score: 30,
+    reactionLevel: 2,
+    cue: 'sweat',
+    multiplier: 0.97,
+    headline: '計画の見直しが必要になりました',
+    childMessage: '仕事に課題が見つかり、会社が対策を考えている架空イベントです。',
+  },
+  'major-loss': {
+    label: '大赤字',
+    score: 8,
+    reactionLevel: 3,
+    cue: 'sweat',
+    multiplier: 0.92,
+    headline: '大きな損失への対応を進めています',
+    childMessage: '大きな費用や失敗が重なり、会社全体で立て直しに取り組む架空イベントです。',
+  },
+} as const;
 
 export const CLOUD_PRODUCTS: readonly CloudProduct[] = [
   {
@@ -60,7 +127,13 @@ export const CLOUD_PRODUCTS: readonly CloudProduct[] = [
 ];
 
 const WORK_EVENTS: Readonly<
-  Record<string, readonly Omit<CloudWorkEvent, 'id' | 'productId' | 'tick' | 'createdAt'>[]>
+  Record<
+    string,
+    readonly Omit<
+      CloudWorkEvent,
+      'id' | 'productId' | 'tick' | 'createdAt' | 'source' | 'intensity'
+    >[]
+  >
 > = {
   'world-growth': [
     {
@@ -130,12 +203,12 @@ function priceAt(productIndex: number, tick: number): number {
   return Math.max(1_000, Math.round(initialPrice * (1 + movement)));
 }
 
-export function getCloudQuote(productId: string, nowMs = Date.now()): CloudQuote {
+export function getCloudQuote(productId: string, nowMs = Date.now(), multiplier = 1): CloudQuote {
   const productIndex = CLOUD_PRODUCTS.findIndex((product) => product.id === productId);
   if (productIndex < 0) throw new Error(`Unknown cloud product: ${productId}`);
   const tick = marketTick(nowMs);
-  const price = priceAt(productIndex, tick);
-  const previousPrice = priceAt(productIndex, Math.max(0, tick - 1));
+  const price = Math.round(priceAt(productIndex, tick) * multiplier);
+  const previousPrice = Math.round(priceAt(productIndex, Math.max(0, tick - 1)) * multiplier);
   const change = price - previousPrice;
   return {
     productId,
@@ -148,8 +221,13 @@ export function getCloudQuote(productId: string, nowMs = Date.now()): CloudQuote
   };
 }
 
-export function getCloudQuotes(nowMs = Date.now()): CloudQuote[] {
-  return CLOUD_PRODUCTS.map((product) => getCloudQuote(product.id, nowMs));
+export function getCloudQuotes(
+  nowMs = Date.now(),
+  multipliers: Readonly<Record<string, number>> = {},
+): CloudQuote[] {
+  return CLOUD_PRODUCTS.map((product) =>
+    getCloudQuote(product.id, nowMs, multipliers[product.id] ?? 1),
+  );
 }
 
 export function getCloudHistory(productId: string, limit = 120, nowMs = Date.now()): CloudQuote[] {
@@ -173,6 +251,8 @@ export function getCloudWorkEvents(limit = 20, nowMs = Date.now()): CloudWorkEve
         id: `work-${product.id}-${tick}`,
         productId: product.id,
         ...template,
+        source: 'automatic',
+        intensity: 1,
         tick,
         createdAt: new Date(CLOUD_EPOCH_MS + tick * 1_000).toISOString(),
       });

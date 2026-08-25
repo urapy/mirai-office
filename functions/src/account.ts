@@ -1,6 +1,12 @@
 import { getFirestore } from 'firebase-admin/firestore';
 
-import { getCloudQuote } from './market.js';
+import {
+  CLOUD_PERFORMANCE_SCENARIOS,
+  CLOUD_PRODUCTS,
+  type CloudPerformanceScenarioId,
+  type CloudPerformanceState,
+  getCloudQuote,
+} from './market.js';
 
 interface StoredHolding {
   quantity: number;
@@ -22,10 +28,17 @@ interface StoredAccount {
   holdings: Record<string, StoredHolding>;
   events: StoredEvent[];
   sequence: number;
+  performance: Record<string, CloudPerformanceState>;
 }
 
 const ACCOUNT_PATH = 'miraiAccounts/demo';
-const EMPTY_ACCOUNT: StoredAccount = { principal: 0, holdings: {}, events: [], sequence: 0 };
+const EMPTY_ACCOUNT: StoredAccount = {
+  principal: 0,
+  holdings: {},
+  events: [],
+  sequence: 0,
+  performance: {},
+};
 
 function normalizeAccount(value: FirebaseFirestore.DocumentData | undefined): StoredAccount {
   if (!value) return structuredClone(EMPTY_ACCOUNT);
@@ -34,12 +47,44 @@ function normalizeAccount(value: FirebaseFirestore.DocumentData | undefined): St
     holdings: (value.holdings ?? {}) as Record<string, StoredHolding>,
     events: Array.isArray(value.events) ? (value.events as StoredEvent[]) : [],
     sequence: Number(value.sequence ?? 0),
+    performance: (value.performance ?? {}) as Record<string, CloudPerformanceState>,
   };
+}
+
+function baselinePerformance(productId: string): CloudPerformanceState {
+  const scenario = CLOUD_PERFORMANCE_SCENARIOS.steady;
+  return {
+    productId,
+    eventId: `baseline-${productId}`,
+    scenario: 'steady',
+    label: scenario.label,
+    score: scenario.score,
+    reactionLevel: scenario.reactionLevel,
+    cue: scenario.cue,
+    headline: scenario.headline,
+    childMessage: scenario.childMessage,
+    startedAt: new Date(0).toISOString(),
+    expiresAt: null,
+  };
+}
+
+function activePerformance(
+  account: StoredAccount,
+  productId: string,
+  nowMs: number,
+): CloudPerformanceState {
+  const state = account.performance[productId];
+  if (!state || (state.expiresAt && Date.parse(state.expiresAt) <= nowMs)) {
+    return baselinePerformance(productId);
+  }
+  return state;
 }
 
 export function accountSnapshot(account: StoredAccount, nowMs = Date.now()) {
   const holdings = Object.entries(account.holdings).map(([productId, holding]) => {
-    const currentPrice = getCloudQuote(productId, nowMs).price;
+    const state = activePerformance(account, productId, nowMs);
+    const multiplier = CLOUD_PERFORMANCE_SCENARIOS[state.scenario].multiplier;
+    const currentPrice = getCloudQuote(productId, nowMs, multiplier).price;
     const valuation = Math.round(holding.quantity * currentPrice);
     return {
       productId,
@@ -69,6 +114,56 @@ export async function getAccount(nowMs = Date.now()) {
 export async function getAccountHistory(): Promise<StoredEvent[]> {
   const snapshot = await getFirestore().doc(ACCOUNT_PATH).get();
   return normalizeAccount(snapshot.data()).events;
+}
+
+export async function getPerformanceStates(nowMs = Date.now()): Promise<CloudPerformanceState[]> {
+  const snapshot = await getFirestore().doc(ACCOUNT_PATH).get();
+  const account = normalizeAccount(snapshot.data());
+  return CLOUD_PRODUCTS.map((product) => activePerformance(account, product.id, nowMs));
+}
+
+export async function triggerPerformanceEvent(
+  productId: string,
+  scenarioId: CloudPerformanceScenarioId,
+  nowMs = Date.now(),
+): Promise<CloudPerformanceState> {
+  const scenario = CLOUD_PERFORMANCE_SCENARIOS[scenarioId];
+  if (!scenario || !CLOUD_PRODUCTS.some((product) => product.id === productId)) {
+    throw new Error('Unknown performance scenario or product');
+  }
+  const state: CloudPerformanceState = {
+    productId,
+    eventId: `performance-${productId}-${nowMs}`,
+    scenario: scenarioId,
+    label: scenario.label,
+    score: scenario.score,
+    reactionLevel: scenario.reactionLevel,
+    cue: scenario.cue,
+    headline: scenario.headline,
+    childMessage: scenario.childMessage,
+    startedAt: new Date(nowMs).toISOString(),
+    expiresAt: new Date(nowMs + 60_000).toISOString(),
+  };
+  await getFirestore().runTransaction(async (transaction) => {
+    const reference = getFirestore().doc(ACCOUNT_PATH);
+    const snapshot = await transaction.get(reference);
+    const current = normalizeAccount(snapshot.data());
+    transaction.set(reference, {
+      ...current,
+      performance: { ...current.performance, [productId]: state },
+    });
+  });
+  return state;
+}
+
+export async function getPerformanceMultipliers(nowMs = Date.now()) {
+  const states = await getPerformanceStates(nowMs);
+  return Object.fromEntries(
+    states.map((state) => [
+      state.productId,
+      CLOUD_PERFORMANCE_SCENARIOS[state.scenario].multiplier,
+    ]),
+  );
 }
 
 export async function contribute(productId: string, amount: number, nowMs = Date.now()) {
@@ -115,6 +210,7 @@ export async function contribute(productId: string, amount: number, nowMs = Date
         },
       ],
       sequence,
+      performance: current.performance,
     };
     transaction.set(reference, result);
   });
